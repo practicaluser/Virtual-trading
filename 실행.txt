@@ -1,10 +1,45 @@
 cd C:\Users\Hope\Desktop\openSource\Project\Virtual-trading
 .\venv\Scripts\activate
 cd backend
+python manage.py runserver 장고 시작
 
 프론트 시작
-cd C:\Users\Hope\Desktop\openSource\Project\Virtual-trading\frontend
-npm start
+cd C:\Users\Hope\Desktop\openSource\Project\Virtual-trading\frontend-vite
+npm run dev
+
+test@test.com
+1
+
+
+2. 핵심 인증 기능 연동
+회원가입 (SignupForm.tsx)
+로그인 (LoginForm.tsx)
+
+3. 인증이 필요한 API 요청 처리
+
+4. 자동 토큰 재발급 시스템 구축
+
+5. 로그아웃 기능 구현
+
+6. 라우트 보호 (Route Protection)
+
+
+실제 백엔드 API와 연동하여 회원가입 요청을 보내고, 성공 또는 실패에 따른 UI 피드백(예: 에러 메시지 표시, 로그인 페이지로 이동 등)을 구현하는 것
+백엔드 API 연동: 현재 UI만 구현된 로그인, 회원가입, 비밀번호 변경 등의 기능에 실제 백엔드 API를 연동하여 데이터를 처리합니다.
+마이페이지 기능 구체화: 비밀번호 변경, 회원 탈퇴 등의 기능을 실제 API와 연동하여 완성합니다.
+
+프론트에게 지금까지 진행사항들을 공유해서 연동되도록 해야 한다.
+6단계: 프론트엔드 연동 시나리오
+백엔드 API가 완성되면 프론트엔드는 다음과 같이 동작하게 됩니다.
+
+회원가입: 사용자가 [회원가입] 폼을 작성하고 제출하면, React는 /api/users/signup/으로 POST 요청을 보냅니다.
+
+로그인: 사용자가 [로그인] 폼을 작성하고 제출하면, React는 /api/users/login/으로 POST 요청을 보냅니다. 성공 시 응답으로 받은 Access/Refresh 토큰을 localStorage, sessionStorage 또는 쿠키에 저장합니다.
+
+인증 필요한 요청: 마이페이지 접근 등 인증이 필요한 API를 호출할 때는, 저장된 Access Token을 꺼내 Authorization 헤더에 담아 요청을 보냅니다.
+
+로그아웃: 사용자가 로그아웃 버튼을 누르면, 프론트엔드는 저장된 토큰을 삭제하고, (블랙리스트 방식을 구현했다면) /api/users/logout/으로 Refresh Token을 보내 서버의 블랙리스트에 등록하도록 요청한 후, 로그인 페이지로 리디렉션합니다.
+
 
 과제 1.1: 개발 환경 설정 및 프로젝트 초기화
 pip install django djangorestframework djangorestframework-simplejwt
@@ -38,14 +73,58 @@ Django는 프로젝트 생성 시 기본적으로 admin, auth, contenttypes, ses
 이 앱들이 사용할 데이터베이스 테이블을 아직 생성하지 않았기 때문에 “18 unapplied migration(s)”라는 경고가 뜹니다.
 
 
-
-
+프론트 세팅
+npx create-react-app . --template typescript
+npm start
 
 
 Git 버전 관리 시작
 git init
 git add .
 git commit -m "Initial commit: Set up Django project structure"
+
+
+
+과제 1.2: PostgreSQL 연동 및 기본 모델 설계
+
+도커 세팅
+cd C:\Users\Hope\Desktop\openSource\Project\Virtual-trading
+docker-compose -f docker/docker-compose.yml up -d
+
+Django가 PostgreSQL과 통신하기 위해 필요한 파이썬 패키지
+pip install psycopg2-binary
+
+backend/config/settings.py 파일을 열고 데이터베이스와 사용자 모델 설정을 변경
+
+커스텀 User 모델 지정: settings.py 파일의 맨 아래에 다음 코드를 추가하여 Django가 우리가 만든 User 모델을 기본 인증 모델로 사용하도록 지정
+
+users/models.py에 코드 작성
+
+데이터베이스 마이그레이션
+모델 정의와 설정 변경이 완료되었으므로, 이 내용을 실제 데이터베이스에 테이블로 생성해야 한다
+cd backend
+
+마이그레이션 파일 생성
+python manage.py makemigrations users
+최신 Django 버전(예: Django 5.0 이상)**은 PostgreSQL 14 버전에 추가된 새로운 데이터 타입이나 기능들을 활용하도록 개발되었을 수 있습니다. 이 때문에 이전 버전인 PostgreSQL 13에서는 더 이상 정상적으로 작동하지 않는다 그래서 volumes:- pgdata로 하면 이름이 docker_pgdata로 된다
+
+마이그레이션 적용
+python manage.py migrate
+
+
+프론트
+cd frontend
+npm install -D tailwindcss@3 
+npm install react-router-dom postcss autoprefixer
+npm install -D vitest @vitest/ui jsdom @testing-library/react @testing-library/user-event @testing-library/jest-dom
+npx tailwindcss init -p
+
+tailwind.config.js 파일 수정
+
+
+
+
+
 
 
 

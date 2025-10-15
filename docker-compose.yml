@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:14
+    # 기존 컨테이너와 이름이 겹치지 않도록 새 이름을 지정합니다.
+    container_name: stocksim_db_port_test
+    
+    # 이 부분이 중요합니다! 기존 볼륨 이름 'pgdata'를 그대로 사용합니다.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      
+    environment:
+      - POSTGRES_DB=stocksim_db
+      - POSTGRES_USER=stocksim_user
+      - POSTGRES_PASSWORD=stocksim_password
+      
+    # 호스트(로컬PC) 포트를 5433으로 변경합니다.
+    ports:
+      - "5433:5432"
+      
+    restart: always
+
+# 여기도 마찬가지로 기존 볼륨 'pgdata'를 명시합니다.
+volumes:
+  pgdata:
