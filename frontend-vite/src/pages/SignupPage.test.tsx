@@ -1,7 +1,6 @@
-import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import SignupPage from './SignupPage'
 import LoginPage from './LoginPage' // 리다이렉션 확인을 위해 import
 import { server } from '../mocks/server'
@@ -19,12 +18,12 @@ const TestRouterWrapper = () => (
 )
 
 // 테스트를 위한 라우팅 환경 설정
-const TestRouter = () => (
-  <Routes>
-    <Route path="/signup" element={<SignupPage />} />
-    <Route path="/login" element={<LoginPage />} />
-  </Routes>
-)
+// const TestRouter = () => (
+//   <Routes>
+//     <Route path="/signup" element={<SignupPage />} />
+//     <Route path="/login" element={<LoginPage />} />
+//   </Routes>
+// )
 
 describe('SignupPage', () => {
   // window.alert를 모킹(mocking)하여 테스트 환경에서 실제로 팝업이 뜨지 않도록 함

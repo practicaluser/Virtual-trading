@@ -1,8 +1,7 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
-import { AuthContext, AuthProvider } from '../../contexts/AuthContext'
+import { AuthContext } from '../../contexts/AuthContext'
 import LoginPage from '../../pages/LoginPage'
 
 // 테스트를 위한 Wrapper 컴포넌트 생성
