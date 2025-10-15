@@ -42,7 +42,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt
+          pip install -r requirements.txt
 
       # 4. (선택) 코드 스타일 검사 (Linting with flake8)
       # flake8을 설치하고 실행하여 파이썬 코드 스타일 가이(PEP 8)를 준수하는지 검사합니다.
