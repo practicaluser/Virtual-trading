@@ -9,58 +9,86 @@ on:
     branches: ['main']
 
 jobs:
+  # Job 1: 백엔드 검증
   backend-check:
     name: ✅ Backend Check
     runs-on: ubuntu-latest
-
     services:
-      # docker-compose.yml의 db 서비스를 참고하여 postgres 서비스 정의
       postgres:
-        # image: postgres:14
         image: postgres:14
-        # environment: - POSTGRES_...
         env:
           POSTGRES_DB: stocksim_db
           POSTGRES_USER: stocksim_user
           POSTGRES_PASSWORD: stocksim_password
-        # ports: - "8765:5432"
         ports:
           - 8765:5432
-        # DB가 준비될 때까지 대기하는 옵션 (CI에서 매우 중요)
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y libpq-dev
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Lint with flake8
         run: |
           pip install flake8
           flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
-
       - name: Run Django unit tests
-        # docker-compose.yml의 설정과 동일하게 환경 변수를 설정하여 Django에 전달
         env:
           DB_HOST: 127.0.0.1
-          DB_PORT: 8765 # 포트 번호 변경
+          DB_PORT: 8765
           DB_NAME: stocksim_db
           DB_USER: stocksim_user
           DB_PASSWORD: stocksim_password
         run: python backend/manage.py test users
+
+  # ------------------ ▼▼▼ 추가된 부분 ▼▼▼ ------------------
+  # Job 2: 프런트엔드 검증
+  frontend-check:
+    name: 🚀 Frontend Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Node.js 환경 설정 (LTS 버전인 20.x 사용)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          # npm 의존성 캐싱을 통해 반복 실행 시 속도 향상
+          cache: 'npm'
+          cache-dependency-path: frontend-vite/package-lock.json
+
+      # npm ci를 사용하여 의존성 설치
+      - name: Install dependencies
+        # working-directory를 지정하여 해당 디렉토리에서 명령 실행
+        working-directory: ./frontend-vite
+        run: npm ci
+
+      # Lint 스크립트 실행 (선택 사항)
+      - name: Lint with ESLint
+        working-directory: ./frontend-vite
+        run: npm run lint
+
+      # 단위 & 컴포넌트 테스트 실행 (Vitest + MSW)
+      - name: Run component tests
+        working-directory: ./frontend-vite
+        run: npm test
+
+      # 프로덕션 빌드 테스트
+      - name: Test production build
+        working-directory: ./frontend-vite
+        run: npm run build
+  # ------------------ ▲▲▲ 추가된 부분 ▲▲▲ ------------------
