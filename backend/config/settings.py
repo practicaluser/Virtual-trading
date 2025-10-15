@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -86,14 +87,25 @@ WSGI_APPLICATION = "config.wsgi.application"
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'stocksim_db',
+#         'USER': 'stocksim_user',
+#         'PASSWORD': 'stocksim_password',
+#         'HOST': 'localhost', # 또는 '127.0.0.1'
+#         'PORT': '8765',
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'stocksim_db',
-        'USER': 'stocksim_user',
-        'PASSWORD': 'stocksim_password',
-        'HOST': 'localhost', # 또는 '127.0.0.1'
-        'PORT': '8765',
+        'NAME': os.environ.get('DB_NAME', 'stocksim_db'),
+        'USER': os.environ.get('DB_USER', 'stocksim_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'stocksim_password'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '8765'),
     }
 }
 

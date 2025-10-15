@@ -1,60 +1,66 @@
 # .github/workflows/ci.yml
 
-# 워크플로우의 이름을 지정합니다. GitHub Actions 탭에 이 이름이 표시됩니다.
 name: Virtual Trading CI
 
-# 워크플로우가 언제 실행될지를 정의합니다.
 on:
-  # main 브랜치에 push 이벤트가 발생했을 때
   push:
     branches: ['main']
-  # main 브랜치로 향하는 pull request가 생성되거나 업데이트될 때
   pull_request:
     branches: ['main']
 
-# 워크플로우를 구성하는 Job들을 정의합니다.
 jobs:
-  # 첫 번째 Job: 백엔드 코드의 무결성을 검증합니다.
   backend-check:
-    # Job의 이름을 지정합니다.
     name: ✅ Backend Check
-
-    # Job을 실행할 가상 환경을 지정합니다. (최신 우분투)
     runs-on: ubuntu-latest
 
-    # Job 내부에서 실행될 단계(Step)들을 정의합니다.
+    services:
+      # docker-compose.yml의 db 서비스를 참고하여 postgres 서비스 정의
+      postgres:
+        # image: postgres:14
+        image: postgres:14
+        # environment: - POSTGRES_...
+        env:
+          POSTGRES_DB: stocksim_db
+          POSTGRES_USER: stocksim_user
+          POSTGRES_PASSWORD: stocksim_password
+        # ports: - "8765:5432"
+        ports:
+          - 8765:5432
+        # DB가 준비될 때까지 대기하는 옵션 (CI에서 매우 중요)
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-      # 1. 코드 가져오기 (Checkout)
-      # actions/checkout@v4 액션을 사용하여 리포지토리 코드를 가상 환경으로 불러옵니다.
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Python 환경 설정
-      # actions/setup-python@v5 액션을 사용하여 특정 버전의 파이썬을 설치합니다.
-      # 프로젝트에서 사용하는 파이썬 버전과 일치시키는 것이 좋습니다. (예: 3.9, 3.10, 3.11)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # 3. Python 의존성 설치
-      # pip를 사용하여 backend/requirements.txt 파일에 명시된 라이브러리들을 설치합니다.
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. (선택) 코드 스타일 검사 (Linting with flake8)
-      # flake8을 설치하고 실행하여 파이썬 코드 스타일 가이(PEP 8)를 준수하는지 검사합니다.
-      # --count 옵션으로 통계를 출력하여 어떤 규칙이 위반되었는지 쉽게 파악할 수 있습니다.
       - name: Lint with flake8
         run: |
           pip install flake8
-          # backend 디렉토리 전체를 대상으로 flake8 검사를 실행합니다.
           flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
-      # 5. Django 단위 테스트 실행
-      # Django의 manage.py를 사용하여 'users' 앱의 단위 테스트를 실행합니다.
-      # API 명세서의 기능들이 서버 로직 상 올바르게 동작하는지 확인합니다.
       - name: Run Django unit tests
+        # docker-compose.yml의 설정과 동일하게 환경 변수를 설정하여 Django에 전달
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 8765 # 포트 번호 변경
+          DB_NAME: stocksim_db
+          DB_USER: stocksim_user
+          DB_PASSWORD: stocksim_password
         run: python backend/manage.py test users
