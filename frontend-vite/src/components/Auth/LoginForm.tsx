@@ -29,7 +29,7 @@ const LoginForm: React.FC = () => {
       })
       const { access, refresh } = response.data
       login({ access, refresh })
-      navigate('/mypage')
+      navigate('/')
     } catch (err) {
       // AxiosError의 제네릭에 위에서 정의한 타입을 넣어줍니다.
       const axiosError = err as AxiosError<LoginErrorResponse>

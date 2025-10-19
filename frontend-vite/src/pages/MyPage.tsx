@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+// import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../contexts/AuthContext'
 import { AxiosError } from 'axios'
@@ -23,8 +23,8 @@ const MyPage: React.FC = () => {
     null,
   )
 
-  const { authState, logout } = useAuth()
-  const navigate = useNavigate()
+  const { logout } = useAuth()
+  // const navigate = useNavigate()
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -88,18 +88,18 @@ const MyPage: React.FC = () => {
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      await axiosInstance.post('/api/users/logout/', {
-        refresh: authState.refreshToken,
-      })
-    } catch (err) {
-      console.error('로그아웃 요청 실패:', err)
-    } finally {
-      logout()
-      navigate('/login')
-    }
-  }
+  // const handleLogout = async () => {
+  //   try {
+  //     await axiosInstance.post('/api/users/logout/', {
+  //       refresh: authState.refreshToken,
+  //     })
+  //   } catch (err) {
+  //     console.error('로그아웃 요청 실패:', err)
+  //   } finally {
+  //     logout()
+  //     navigate('/login')
+  //   }
+  // }
 
   // 로딩 상태 - 배경 통일
   if (loading) {
@@ -220,14 +220,14 @@ const MyPage: React.FC = () => {
         </div>
 
         {/* 로그아웃 버튼 */}
-        <div>
+        {/* <div>
           <button
             onClick={handleLogout}
             className="w-full mt-8 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg"
           >
             로그아웃
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   )

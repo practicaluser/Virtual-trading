@@ -48,32 +48,32 @@ describe('MyPage', () => {
     expect(await screen.findByText('테스트유저')).toBeInTheDocument()
   })
 
-  test('로그아웃 버튼을 클릭하면 logout 함수를 호출하고 로그인 페이지로 이동한다', async () => {
-    const user = userEvent.setup()
+  // test('로그아웃 버튼을 클릭하면 logout 함수를 호출하고 로그인 페이지로 이동한다', async () => {
+  //   const user = userEvent.setup()
 
-    // 로그아웃 API가 성공적으로 응답한다고 설정
-    server.use(
-      http.post('http://127.0.0.1:8000/api/users/logout/', () => {
-        return new HttpResponse(null, { status: 205 })
-      }),
-    )
+  //   // 로그아웃 API가 성공적으로 응답한다고 설정
+  //   server.use(
+  //     http.post('http://127.0.0.1:8000/api/users/logout/', () => {
+  //       return new HttpResponse(null, { status: 205 })
+  //     }),
+  //   )
 
-    renderWithProviders(<MyPage />)
+  //   renderWithProviders(<MyPage />)
 
-    // 1. 초기 데이터가 로드될 때까지 기다림
-    expect(await screen.findByText('테스트유저')).toBeInTheDocument()
+  //   // 1. 초기 데이터가 로드될 때까지 기다림
+  //   expect(await screen.findByText('테스트유저')).toBeInTheDocument()
 
-    // 2. 로그아웃 버튼을 찾아 클릭
-    const logoutButton = screen.getByRole('button', { name: '로그아웃' })
-    await user.click(logoutButton)
+  //   // 2. 로그아웃 버튼을 찾아 클릭
+  //   const logoutButton = screen.getByRole('button', { name: '로그아웃' })
+  //   await user.click(logoutButton)
 
-    // 3. 결과 검증
-    // (검증 1) AuthContext의 logout 함수가 1번 호출되었는지 확인
-    expect(mockLogout).toHaveBeenCalledTimes(1)
+  //   // 3. 결과 검증
+  //   // (검증 1) AuthContext의 logout 함수가 1번 호출되었는지 확인
+  //   expect(mockLogout).toHaveBeenCalledTimes(1)
 
-    // (검증 2) 로그인 페이지로 성공적으로 리다이렉트되었는지 확인
-    expect(
-      await screen.findByRole('heading', { name: '로그인' }),
-    ).toBeInTheDocument()
-  })
+  //   // (검증 2) 로그인 페이지로 성공적으로 리다이렉트되었는지 확인
+  //   expect(
+  //     await screen.findByRole('heading', { name: '로그인' }),
+  //   ).toBeInTheDocument()
+  // })
 })

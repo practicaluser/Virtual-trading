@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist", 
     'corsheaders',
     'users',
+    'stocks',
 ]
 
 MIDDLEWARE = [
@@ -207,4 +208,30 @@ SIMPLE_JWT = {
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
+}
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG', # DEBUG 레벨 이상의 모든 로그를 처리
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'stocks': { # 'stocks' 앱에서 발생하는 모든 로그를
+            'handlers': ['console'], # 'console' 핸들러로 보내서
+            'level': 'DEBUG', # DEBUG 레벨 이상을 모두 출력
+            'propagate': True,
+        },
+    },
 }

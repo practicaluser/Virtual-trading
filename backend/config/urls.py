@@ -20,5 +20,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/users/", include("users.urls")), # 이 줄을 추가합니다.
+    path("api/users/", include("users.urls")), 
+    path('api/stocks/', include('stocks.urls')),
 ]
