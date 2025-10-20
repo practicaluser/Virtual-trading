@@ -1,12 +1,12 @@
 import { type ReactElement } from 'react'
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+// import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import MyPage from './MyPage'
 import LoginPage from './LoginPage'
 import { AuthContext } from '../contexts/AuthContext'
-import { server } from '../mocks/server'
-import { http, HttpResponse } from 'msw'
+// import { server } from '../mocks/server'
+// import { http, HttpResponse } from 'msw'
 
 // 로그아웃 함수를 감시하기 위한 Mock 함수 생성
 const mockLogout = vi.fn()
