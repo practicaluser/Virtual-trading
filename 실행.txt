@@ -38,6 +38,11 @@ test2@test.com
 requirements.txt 생성
 pip freeze > requirements.txt
 
+pip install black
+black .
+pip install ruff
+ruff check . --fix
+
 
 2. 핵심 인증 기능 연동
 회원가입 (SignupForm.tsx)
