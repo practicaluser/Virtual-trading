@@ -40,23 +40,22 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'rest_framework',
-    'rest_framework_simplejwt',
-    "rest_framework_simplejwt.token_blacklist", 
-    'corsheaders',
-    'users',
-    'stocks',
-    'trading',
-
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "corsheaders",
+    "users",
+    "stocks",
+    "trading",
     # Celery 관련 앱 추가
-    'django_celery_beat',      # 스케줄러 (DB 사용)
-    'django_celery_results',   # 작업 결과 (DB 사용)
+    "django_celery_beat",  # 스케줄러 (DB 사용)
+    "django_celery_results",  # 작업 결과 (DB 사용)
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware", 
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -106,13 +105,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 # }
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'stocksim_db'),
-        'USER': os.environ.get('DB_USER', 'stocksim_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'stocksim_password'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '8765'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME", "stocksim_db"),
+        "USER": os.environ.get("DB_USER", "stocksim_user"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "stocksim_password"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "8765"),
     }
 }
 
@@ -158,11 +157,11 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     )
 }
 
@@ -177,38 +176,32 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # (선택사항) SIMPLE_JWT 상세 설정
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30), # Access Token 유효 기간: 30분
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # Access Token 유효 기간: 30분
     # "ACCESS_TOKEN_LIFETIME": timedelta(seconds=10),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),    # Refresh Token 유효 기간: 7일
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh Token 유효 기간: 7일
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,
-
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY, # Django의 SECRET_KEY를 그대로 사용
+    "SIGNING_KEY": SECRET_KEY,  # Django의 SECRET_KEY를 그대로 사용
     "VERIFYING_KEY": "",
     "AUDIENCE": None,
     "ISSUER": None,
     "JSON_ENCODER": None,
     "JWK_URL": None,
     "LEEWAY": 0,
-
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
     "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
-
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
-
     "JTI_CLAIM": "jti",
-
     "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
     "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
-
     "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
     "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
@@ -219,64 +212,63 @@ SIMPLE_JWT = {
 
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
         },
     },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG', # DEBUG 레벨 이상의 모든 로그를 처리
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+    "handlers": {
+        "console": {
+            "level": "DEBUG",  # DEBUG 레벨 이상의 모든 로그를 처리
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
     },
-    'loggers': {
-        'stocks': { # 'stocks' 앱에서 발생하는 모든 로그를
-            'handlers': ['console'], # 'console' 핸들러로 보내서
-            'level': 'DEBUG', # DEBUG 레벨 이상을 모두 출력
-            'propagate': True,
+    "loggers": {
+        "stocks": {  # 'stocks' 앱에서 발생하는 모든 로그를
+            "handlers": ["console"],  # 'console' 핸들러로 보내서
+            "level": "DEBUG",  # DEBUG 레벨 이상을 모두 출력
+            "propagate": True,
         },
     },
 }
-
 
 
 # ==============================================================================
 # CELERY SETTINGS
 # ==============================================================================
 # 메시지 브로커 URL (Docker Compose의 Redis 서비스 이름 사용)
-CELERY_BROKER_URL = 'redis://redis:6379/0' # Docker 내부에서는 'redis' 호스트명 사용
+CELERY_BROKER_URL = "redis://redis:6379/0"  # Docker 내부에서는 'redis' 호스트명 사용
 # 작업 결과 백엔드 URL
-CELERY_RESULT_BACKEND = 'django-db' # django-celery-results 사용 (DB에 결과 저장)
+CELERY_RESULT_BACKEND = "django-db"  # django-celery-results 사용 (DB에 결과 저장)
 # 작업 결과가 JSON으로 직렬화되도록 설정 (기본값)
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
 # 시간대 설정 (Django 설정과 동일하게)
-CELERY_TIMEZONE = TIME_ZONE # TIME_ZONE = 'Asia/Seoul'
-CELERY_ENABLE_UTC = False # False로 해야 TIME_ZONE 설정이 적용됨
+CELERY_TIMEZONE = TIME_ZONE  # TIME_ZONE = 'Asia/Seoul'
+CELERY_ENABLE_UTC = False  # False로 해야 TIME_ZONE 설정이 적용됨
 
 # --- Celery Beat 설정 ---
 # 스케줄러 설정 (DB 사용)
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # [핵심] 스케줄 정의 (예시: 매일 자정 5분에 실행)
 # 실제 운영 시에는 'crontab'을 사용하여 "매월 마지막 거래일"을 더 정확히 지정해야 함
 CELERY_BEAT_SCHEDULE = {
-    'record-asset-snapshot-daily': { # 스케줄 이름 (고유해야 함)
-        'task': 'users.tasks.task_record_asset_snapshot', # 실행할 Task 경로
-        'schedule': crontab(minute='0', hour='18'), # 매일 00:05분에 실행
+    "record-asset-snapshot-daily": {  # 스케줄 이름 (고유해야 함)
+        "task": "users.tasks.task_record_asset_snapshot",  # 실행할 Task 경로
+        "schedule": crontab(minute="0", hour="18"),  # 매일 00:05분에 실행
         # 'schedule': crontab(minute='0', hour='18', day_of_month='last'), # 매월 마지막날 18시 (거래일 체크 필요)
         # 'args': (arg1, arg2), # Task에 인자를 넘길 경우
     },
     # 다른 주기적인 Task가 있다면 여기에 추가
-    'process-pending-orders-every-minute': {
-        'task': 'trading.tasks.process_pending_limit_orders', # 새 작업 경로
-        'schedule': crontab(minute='*'), # 매 분마다 실행
+    "process-pending-orders-every-minute": {
+        "task": "trading.tasks.process_pending_limit_orders",  # 새 작업 경로
+        "schedule": crontab(minute="*"),  # 매 분마다 실행
         # 대안: 30초마다 실행
         # 'schedule': timedelta(seconds=30),
         # 주의: 너무 자주 실행하면 API 호출 제한에 걸리거나 서버 부하가 증가할 수 있습니다.
@@ -285,8 +277,8 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # 작업 결과를 DB에 저장하기 위한 설정 (django-celery-results)
-CELERY_RESULT_EXTENDED = True # 작업 결과에 더 많은 정보 포함
+CELERY_RESULT_EXTENDED = True  # 작업 결과에 더 많은 정보 포함
 CELERY_RESULT_BACKEND_ALWAYS_RETRY = True
 CELERY_RESULT_BACKEND_MAX_RETRIES = 10
-CELERY_TASK_SEND_SENT_EVENT = True # 작업 상태 추적 이벤트 활성화
-CELERY_TASK_TRACK_STARTED = True # 작업 시작 상태 추적
+CELERY_TASK_SEND_SENT_EVENT = True  # 작업 상태 추적 이벤트 활성화
+CELERY_TASK_TRACK_STARTED = True  # 작업 시작 상태 추적
