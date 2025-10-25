@@ -49,7 +49,6 @@
 
 - **📅 개발 기간**: 2025.10.13 ~ 2025.10.25
 - **💻 개발 형태**: 1인 풀스택 개발
-- **🔗 GitHub**: [![GitHub Repository](https://img.shields.io/badge/VIRTUAL--TRADING-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/practicaluser/Virtual-trading)
 
 ---
 
