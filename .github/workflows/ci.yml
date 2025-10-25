@@ -5,15 +5,27 @@ name: Virtual Trading CI
 on:
   push:
     branches: ['main']
+    # backend, frontend 또는 워크플로우 파일이 변경될 때만 실행
+    paths:
+      - 'backend/**'
+      - 'frontend-vite/**'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: ['main']
+    # backend, frontend 또는 워크플로우 파일이 변경될 때만 실행
+    paths:
+      - 'backend/**'
+      - 'frontend-vite/**'
+      - '.github/workflows/ci.yml'
 
 jobs:
   # Job 1: 백엔드 검증
   backend-check:
     name: ✅ Backend Check
     runs-on: ubuntu-latest
+
     services:
+      # 테스트용 PostgreSQL 서비스
       postgres:
         image: postgres:14
         env:
@@ -21,39 +33,78 @@ jobs:
           POSTGRES_USER: stocksim_user
           POSTGRES_PASSWORD: stocksim_password
         ports:
-          - 8765:5432
+          - 8765:5432 # Runner의 8765 포트와 매핑
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
+      # [개선] Celery 테스트를 위한 Redis 서비스 추가
+      redis:
+        image: redis:6-alpine
+        ports:
+          - 6379:6379 # Runner의 6379 포트와 매핑
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          # [개선] pip 의존성 캐싱
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
       - name: Install dependencies
+        # [개선] backend 디렉토리에서 명령어 실행
+        working-directory: ./backend
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt
-      - name: Lint with flake8
+          pip install -r requirements.txt
+          # [개선] 린팅 및 커버리지 도구 설치
+          pip install flake8 black isort coverage
+
+      - name: Lint with flake8, black, isort
+        # [개선] backend 디렉토리에서 명령어 실행
+        working-directory: ./backend
         run: |
-          pip install flake8
-          flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
-      - name: Run Django unit tests
+          echo "Running flake8..."
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          echo "Running black check..."
+          black --check .
+          echo "Running isort check..."
+          isort --check .
+
+      - name: Run Django unit tests with coverage
+        # [개S] backend 디렉토리에서 명령어 실행
+        working-directory: ./backend
+        # [개선] 테스트용 환경 변수에 Redis 추가
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 8765
           DB_NAME: stocksim_db
           DB_USER: stocksim_user
           DB_PASSWORD: stocksim_password
-        run: python backend/manage.py test users
+          REDIS_HOST: 127.0.0.1 # 서비스 포트 매핑 사용
+          REDIS_PORT: 6379
+          # [개선] Celery가 테스트 중 즉시 실행되도록 설정 (권장)
+          CELERY_TASK_ALWAYS_EAGER: 'True'
+        run: |
+          # [개선] coverage로 테스트 실행 및 커버리지 80% 미만 시 실패
+          coverage run manage.py test
+          coverage report -m --fail-under=80
 
-  # ------------------ ▼▼▼ 추가된 부분 ▼▼▼ ------------------
   # Job 2: 프런트엔드 검증
   frontend-check:
     name: 🚀 Frontend Check
@@ -62,28 +113,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Node.js 환경 설정 (LTS 버전인 20.x 사용)
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          # npm 의존성 캐싱을 통해 반복 실행 시 속도 향상
           cache: 'npm'
           cache-dependency-path: frontend-vite/package-lock.json
 
-      # npm ci를 사용하여 의존성 설치
       - name: Install dependencies
-        # working-directory를 지정하여 해당 디렉토리에서 명령 실행
         working-directory: ./frontend-vite
         run: npm ci
 
-      # Lint 스크립트 실행 (선택 사항)
       - name: Lint with ESLint
         working-directory: ./frontend-vite
-        run: npm run lint || true
+        # [개선] || true를 제거하여 린트 오류 시 CI 실패
+        run: npm run lint
 
-      # 프로덕션 빌드 테스트
+      # [개선] 유닛 테스트(npm test) 및 E2E 테스트는 요청에 따라 생략
+
       - name: Test production build
         working-directory: ./frontend-vite
         run: npm run build
-  # ------------------ ▲▲▲ 추가된 부분 ▲▲▲ ------------------
+
+  # [개선] Job 3: 모든 CI 통과 확인
+  ci-pipeline-success:
+    name: 🏁 CI Pipeline Success
+    runs-on: ubuntu-latest
+    # [개선] backend-check와 frontend-check가 모두 성공해야 실행됨
+    needs: [backend-check, frontend-check]
+    steps:
+      - name: Report success
+        run: echo "✅ All CI checks passed successfully."

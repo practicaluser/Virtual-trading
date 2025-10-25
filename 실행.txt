@@ -3,6 +3,12 @@ cd C:\Users\Hope\Desktop\openSource\Project\Virtual-trading
 cd backend
 python manage.py runserver 장고 시작
 
+새 터미널 # backend/ 디렉터리에서 실행 (가상환경 활성화 상태)
+celery -A config worker --loglevel=info
+
+터미널 2: Celery Beat 실행
+celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
 python manage.py crawl_stocks
 
 
@@ -10,10 +16,12 @@ python manage.py crawl_stocks
 컨테이너 안에 직접 접속
 docker exec -it stocksim_db psql -U stocksim_user -d stocksim_db
 \dt
-\d stocks_stock;
+\d users_user;     // users_user   stocks_stock trading_transaction
+SELECT * FROM  users_user;
 SELECT COUNT(*) FROM stocks_stock where stock_code = '000815'; 
 SELECT * FROM stocks_stock where stock_code = '000815'; 
 DELETE FROM token_blacklist_outstandingtoken WHERE user_id IN (4, 6, 7, 8, 9);
+DELETE FROM users_user WHERE id = 10;
 DELETE FROM users_user WHERE id BETWEEN 4 AND 9;
 
 
@@ -24,6 +32,8 @@ npm run dev
 test@test.com
 1
 
+test2@test.com
+12345678
 
 requirements.txt 생성
 pip freeze > requirements.txt

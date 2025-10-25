@@ -14,7 +14,7 @@ test('renders home page elements', () => {
   )
 
   // 'StockSim' 이라는 텍스트가 있는지 확인
-  const titleElement = screen.getByText(/StockSim/i)
+  const titleElement = screen.getByText(/Ascend Capital/i)
   expect(titleElement).toBeInTheDocument()
 
   // 환영 메시지가 있는지 확인

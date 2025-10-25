@@ -12,8 +12,41 @@ import logging
 import re
 import time
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 
 logger = logging.getLogger(__name__)
+
+
+# ================================================================
+# ✨ [신규 추가] 거래(Trading) 앱을 위한 헬퍼 함수
+# ================================================================
+def get_current_stock_price_for_trading(stock_code: str) -> Decimal:
+    """
+    [거래 로직 전용 함수]
+    주문 처리에 필요한 '현재가'만 빠르게 크롤링하여 Decimal 타입으로 반환합니다.
+    이 함수는 trading 앱에서 직접 임포트하여 사용합니다.
+    """
+    url = f'https://finance.naver.com/item/sise.naver?code={stock_code}'
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=5)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # 네이버 증권의 현재가 ID 선택자
+        price_strong = soup.select_one('#_nowVal')
+        if not price_strong:
+            raise ValueError(f"'{stock_code}'의 현재가 정보를 찾을 수 없습니다.")
+
+        price_str = price_strong.get_text(strip=True).replace(',', '')
+        return Decimal(price_str)
+
+    except requests.exceptions.RequestException as e:
+        # 이 에러들은 주문 실패로 이어져야 하므로, 다시 raise 합니다.
+        raise ConnectionError(f"네이버 금융 서버 요청 실패: {e}")
+    except (ValueError, InvalidOperation, AttributeError) as e:
+        raise ValueError(f"'{stock_code}'의 현재가 파싱 중 오류 발생: {e}")
 
 def parse_change_data(change_element):
     """
@@ -88,95 +121,6 @@ class MarketIndexView(APIView):
         except Exception as e:
             return Response({"error": f"데이터 파싱 중 오류 발생: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-# class StockSearchView(APIView):
-#     """
-#     쿼리 파라미터로 받은 검색어로 주식을 검색하는 API.
-#     DB에 없는 종목은 네이버 검색 결과에서 제외하고,
-#     입력값이 종목 코드인 경우, 해당 코드와 일치하는 종목만 필터링하여 반환합니다.
-#     """
-#     def get(self, request, *args, **kwargs):
-#         query = request.query_params.get('query', None)
-
-#         # --- 로그: 시작 ---
-#         logger.info("="*50)
-#         logger.info(f"🚀 API 호출 시작: query='{query}'")
-
-#         if not query:
-#             return Response({"error": "검색어('query')를 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
-
-#         search_term = query
-#         if query.isdigit() and len(query) == 6:
-#             try:
-#                 stock = Stock.objects.get(stock_code=query)
-#                 search_term = stock.stock_name
-#             except Stock.DoesNotExist:
-#                 pass
-        
-#         # --- 로그: 검색어 확인 ---
-#         logger.info(f"🔍 실제 네이버 검색어(search_term): '{search_term}'")
-        
-#         encoded_query = urllib.parse.quote(search_term, encoding='euc-kr')
-#         url = f'https://finance.naver.com/search/search.naver?query={encoded_query}'
-#         headers = {'User-Agent': 'Mozilla/5.0'}
-
-#         try:
-#             response = requests.get(url, headers=headers)
-#             response.raise_for_status()
-#             soup = BeautifulSoup(response.text, 'html.parser')
-
-#             search_table = soup.find('table', class_='tbl_search', summary='국내종목 검색 결과')
-#             if not search_table:
-#                 return Response([], status=status.HTTP_200_OK)
-
-#             scraped_results = []
-#             # ... (기존 크롤링 for문) ...
-#             stock_rows = search_table.find('tbody').find_all('tr')
-#             for row in stock_rows:
-#                 columns = row.find_all('td')
-#                 if len(columns) < 3: continue
-#                 name_tag = columns[0].find('a')
-#                 if not name_tag: continue
-#                 name = name_tag.get_text(strip=True)
-#                 code = name_tag['href'].split('code=')[1]
-#                 price = columns[1].get_text(strip=True)
-#                 change_rate_text = columns[2].get_text(strip=True).replace('%', '')
-#                 try:
-#                     change_rate = float(change_rate_text)
-#                 except ValueError:
-#                     change_rate = 0.0
-#                 scraped_results.append({
-#                     "name": name, "code": code, "price": price, "changeRate": change_rate
-#                 })
-
-#             # --- 로그: 네이버 크롤링 결과 확인 ---
-#             logger.info(f"📄 [1단계] 네이버 크롤링 결과 (총 {len(scraped_results)}개): {scraped_results}")
-
-#             if not scraped_results:
-#                 return Response([], status=status.HTTP_200_OK)
-
-#             scraped_codes = [item['code'] for item in scraped_results]
-            
-#             # --- 로그: DB에 조회할 코드 목록 확인 ---
-#             logger.info(f"📋 [2단계] DB에 존재 여부를 확인할 종목 코드 목록: {scraped_codes}")
-            
-#             existing_codes_in_db = set(Stock.objects.filter(stock_code__in=scraped_codes).values_list('stock_code', flat=True))
-            
-#             # --- 로그: DB 조회 결과 확인 (가장 중요!) ---
-#             logger.info(f"✅ [3단계] 우리 DB에 실제로 존재하는 종목 코드 목록: {existing_codes_in_db}")
-            
-#             final_results = [item for item in scraped_results if item['code'] in existing_codes_in_db]
-
-#             # --- 로그: 최종 필터링 결과 확인 ---
-#             logger.info(f"🏁 [4단계] 최종 필터링 후 결과 (총 {len(final_results)}개): {final_results}")
-#             logger.info("="*50 + "\n")
-
-#             return Response(final_results, status=status.HTTP_200_OK)
-
-#         except Exception as e:
-#             # --- 로그: 에러 발생 시 ---
-#             logger.error(f"💥 처리 중 예외 발생: {e}")
-#             return Response({"error": f"데이터 처리 중 오류 발생: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class StockSearchView(APIView):

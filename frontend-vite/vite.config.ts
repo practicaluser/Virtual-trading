@@ -9,5 +9,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts', // 기존 테스트 설정 파일 경로
     css: true,
+    exclude: [
+      'node_modules',
+      'dist',
+      '**/archivedTest/**', // archivedTest 폴더 제외
+    ],
   },
 })

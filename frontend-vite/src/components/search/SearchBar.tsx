@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 interface SearchBarProps {
   onSearch: (query: string) => void
   isLoading: boolean
+  initialValue?: string // <--- 이 줄 추가
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
@@ -29,7 +30,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyPress={handleKeyPress}
-        placeholder="종목명 또는 코스코드를 입력하세요"
+        placeholder="종목명 또는 종목코드를 입력하세요"
         className="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
       />
       <button

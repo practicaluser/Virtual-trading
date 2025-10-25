@@ -1,12 +1,15 @@
-from rest_framework.generics import CreateAPIView, RetrieveAPIView , UpdateAPIView, DestroyAPIView
+from django.utils import timezone 
+
+from rest_framework import status, serializers, generics
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status, serializers
+from rest_framework.generics import CreateAPIView, RetrieveAPIView , UpdateAPIView, DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView  
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import User
-from .serializers import UserCreationSerializer, PasswordChangeSerializer 
+from .models import User, AssetHistory
+from .serializers import UserCreationSerializer, PasswordChangeSerializer, UserSerializer, AssetHistorySerializer
+from datetime import timedelta
 
 # ... SignupView는 그대로 ...
 class SignupView(CreateAPIView):
@@ -15,10 +18,10 @@ class SignupView(CreateAPIView):
 
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('email', 'nickname', 'date_joined')
+# class UserSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ('email', 'nickname', 'date_joined')
 
 class MyPageView(RetrieveAPIView):
     """
@@ -65,3 +68,23 @@ class WithdrawView(DestroyAPIView):
 
     def get_object(self):
         return self.request.user
+    
+# ▼▼▼▼▼ [신규] 자산 변화 추이 조회 API ▼▼▼▼▼
+class AssetHistoryListView(generics.ListAPIView):
+    """
+    로그인한 사용자의 월말 자산 변화 추이 데이터를 반환합니다.
+    (기본: 최근 12개월)
+    """
+    serializer_class = AssetHistorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        # 최근 12개월 데이터만 조회 (요구사항에 따라 조절 가능)
+        twelve_months_ago = timezone.now().date() - timedelta(days=365)
+        
+        return AssetHistory.objects.filter(
+            user=user,
+            snapshot_date__gte=twelve_months_ago
+        ).order_by('snapshot_date') # 날짜 오름차순 정렬

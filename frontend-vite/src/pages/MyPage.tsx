@@ -1,77 +1,55 @@
-import React, { useEffect, useState } from 'react'
-// import { useNavigate } from 'react-router-dom'
-import axiosInstance from '../api/axiosInstance'
+import React, { useMemo } from 'react' // useState, useEffect, useCallback 제거
+import axiosInstance from '../api/axiosInstance' // ✨ 회원 탈퇴(handleWithdraw)를 위해 다시 임포트
 import { useAuth } from '../contexts/AuthContext'
-import { AxiosError } from 'axios'
 
-// API 응답 데이터의 타입을 정의
-interface UserData {
-  email: string
-  nickname: string
-  date_joined: string
+// --- Component Imports ---
+import { AssetSummary } from '../components/mypage/AssetSummary'
+import { AssetHistoryChart } from '../components/mypage/AssetHistoryChart'
+import { HoldingsTable } from '../components/mypage/HoldingsTable' // ✨ StockCalculations 제거됨
+import { TransactionHistory } from '../components/mypage/TransactionHistory'
+import { SettingsForm } from '../components/mypage/SettingsForm'
+import { PendingOrdersTable } from '../components/mypage/PendingOrdersTable'
+
+// --- Type Imports ---
+import {
+  type AssetSummaryData,
+  type AssetHistoryData,
+  // PortfolioItem, TransactionOrderItem 등은 훅 내부에서 사용
+} from '../components/mypage/mypage.types'
+
+// --- Custom Hook Import ---
+import { usePortfolioData } from '../hooks/usePortfolioData' // ✨ 훅 임포트
+
+// --- Helper Function ---
+const getCurrentMonthString = (): string => {
+  const month = new Date().getMonth() + 1 // getMonth()는 0부터 시작
+  return `${month}월`
 }
 
+// --- MyPage Component ---
 const MyPage: React.FC = () => {
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
+  // --- Custom Hook Usage ---
+  // 훅을 호출하여 필요한 모든 데이터와 상태를 가져옵니다.
+  const {
+    isLoading, // 데이터 로딩 상태
+    error, // 에러 메시지
+    userInfo, // 사용자 정보 (닉네임, 이메일 등)
+    cashBalance, // 보유 현금 (AuthContext에서 옴)
+    stockHoldings, // 보유 주식 목록 (실시간 데이터 포함)
+    transactionHistory, // 거래 내역
+    pendingOrders,
+    historicalAssetHistory, // 과거 월말 자산 추이
+    stockCalcs, // 계산된 주식 합계 (평가액, 손익, 수익률)
+    totalAssets, // 계산된 총 자산 (주식 + 현금)
+    initialAssets, // 시작 자산 (현재는 mock)
+    cancelOrder,
+  } = usePortfolioData()
 
-  // 1. 비밀번호 변경을 위한 상태 추가
-  const [oldPassword, setOldPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [passwordChangeError, setPasswordChangeError] = useState<string | null>(
-    null,
-  )
-
+  // AuthContext에서 logout 함수 가져오기
   const { logout } = useAuth()
-  // const navigate = useNavigate()
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true)
-        const response = await axiosInstance.get<UserData>('/api/users/mypage/')
-        setUserData(response.data)
-      } catch (err) {
-        setError('사용자 정보를 불러오는 데 실패했습니다.')
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUserData()
-  }, [])
-
-  // 2. 비밀번호 변경 폼 제출 핸들러
-  const handleChangePassword = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setPasswordChangeError(null)
-
-    if (!oldPassword || !newPassword) {
-      setPasswordChangeError('모든 필드를 입력해주세요.')
-      return
-    }
-
-    try {
-      await axiosInstance.put('/api/users/password/change/', {
-        old_password: oldPassword,
-        new_password: newPassword,
-      })
-      alert('비밀번호가 성공적으로 변경되었습니다.')
-      setOldPassword('')
-      setNewPassword('')
-    } catch (err) {
-      const axiosError = err as AxiosError
-      if (axiosError.response && axiosError.response.status === 400) {
-        setPasswordChangeError('현재 비밀번호가 일치하지 않습니다.')
-      } else {
-        setPasswordChangeError('비밀번호 변경에 실패했습니다.')
-      }
-    }
-  }
-
-  // 3. 회원 탈퇴 핸들러
+  // --- Event Handler ---
+  // 회원 탈퇴 함수
   const handleWithdraw = async () => {
     if (
       window.confirm(
@@ -79,156 +57,103 @@ const MyPage: React.FC = () => {
       )
     ) {
       try {
+        // ✨ axiosInstance 사용
         await axiosInstance.delete('/api/users/withdraw/')
         alert('계정이 성공적으로 삭제되었습니다.')
-        logout() // Context와 localStorage에서 토큰 삭제 및 상태 변경
+        logout() // 로그아웃 처리
       } catch (err) {
         alert('계정 삭제에 실패했습니다. 다시 시도해주세요.')
+        console.error('Withdrawal failed:', err)
       }
     }
   }
 
-  // const handleLogout = async () => {
-  //   try {
-  //     await axiosInstance.post('/api/users/logout/', {
-  //       refresh: authState.refreshToken,
-  //     })
-  //   } catch (err) {
-  //     console.error('로그아웃 요청 실패:', err)
-  //   } finally {
-  //     logout()
-  //     navigate('/login')
-  //   }
-  // }
+  // --- Derived State / Memoized Calculations ---
+  // 최종 자산 변화 추이 데이터 조합 (과거 + 현재)
+  const finalAssetHistoryData = useMemo(() => {
+    if (isLoading || error) return [] // 로딩 중/에러 시 빈 배열
+    const currentMonthStr = getCurrentMonthString()
+    const currentMonthData: AssetHistoryData = {
+      month: currentMonthStr,
+      value: String(totalAssets), // 현재 총 자산 사용
+    }
+    // API 데이터에서 현재 달과 같은 월 데이터 제거
+    const pastMonthsData = historicalAssetHistory.filter(
+      (item) => item.month !== currentMonthStr,
+    )
+    return [...pastMonthsData, currentMonthData] // 배열 합치기
+  }, [historicalAssetHistory, totalAssets, isLoading, error]) // 의존성 배열
 
-  // 로딩 상태 - 배경 통일
-  if (loading) {
+  // --- Conditional Rendering for Loading/Error ---
+  // 로딩 중 UI
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-[#667eea] to-[#764ba2]">
-        <div className="text-white text-xl">로딩 중...</div>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-xl text-gray-500">데이터를 불러오는 중...</div>
       </div>
     )
   }
-
-  // 에러 상태 - 배경 통일
+  // 에러 발생 UI
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-[#667eea] to-[#764ba2]">
-        <div className="text-white text-xl text-red-300">{error}</div>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-xl text-red-500">{error}</div>
       </div>
     )
   }
 
+  // --- Data Preparation for AssetSummary ---
+  // AssetSummary에 전달할 데이터 객체 생성
+  const totalOverallProfit = totalAssets - initialAssets // 전체 손익
+  const totalOverallProfitRate = // 전체 수익률 (0 나누기 방지)
+    initialAssets > 0 ? (totalOverallProfit / initialAssets) * 100 : 0
+
+  const displayAssetSummary: AssetSummaryData = {
+    totalAssets: totalAssets, // 실시간 총 자산
+    totalProfit: totalOverallProfit, // 실시간 전체 손익
+    totalProfitRate: totalOverallProfitRate, // 실시간 전체 수익률
+    cash: cashBalance, // 실시간 보유 현금
+    stockValue: stockCalcs.totalStockValue, // 실시간 주식 평가액
+    initialAssets: initialAssets, // 시작 자산 (Mock)
+  }
+
+  // --- Render ---
   return (
-    // 배경을 홈과 동일한 그라데이션으로 변경 + Navbar와의 간격을 위해 상단 패딩 추가
-    <div className="flex justify-center items-start py-28 px-4 min-h-screen bg-gradient-to-r from-[#667eea] to-[#764ba2]">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-gray-800 text-center">
-          마이페이지
-        </h2>
-
-        {/* 내 정보 */}
-        {userData && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-              내 정보
-            </h3>
-            <div>
-              <p className="text-sm text-gray-500">이메일</p>
-              <p className="text-gray-800 font-medium">{userData.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">닉네임</p>
-              <p className="text-gray-800 font-medium">{userData.nickname}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">가입일</p>
-              <p className="text-gray-800 font-medium">
-                {new Date(userData.date_joined).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* 비밀번호 변경 */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-            비밀번호 변경
-          </h3>
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div>
-              <label
-                htmlFor="current-password"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                현재 비밀번호
-              </label>
-              <input
-                type="password"
-                id="current-password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                className="form-input w-full px-4 py-2 border border-gray-300 rounded-lg"
-                placeholder="••••••••"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="new-password"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                새 비밀번호
-              </label>
-              <input
-                type="password"
-                id="new-password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="form-input w-full px-4 py-2 border border-gray-300 rounded-lg"
-                placeholder="••••••••"
-              />
-            </div>
-            {passwordChangeError && (
-              <p className="text-red-500 text-sm text-center">
-                {passwordChangeError}
-              </p>
-            )}
-            <button
-              type="submit"
-              className="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300"
-            >
-              비밀번호 변경
-            </button>
-          </form>
-        </div>
-
-        {/* 회원 탈퇴 */}
+    <div className="bg-gray-50 min-h-screen">
+      <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* 페이지 제목 */}
         <div>
-          <h3 className="text-lg font-semibold text-red-600 border-b border-red-200 pb-2">
-            회원 탈퇴
-          </h3>
-          <p className="text-sm text-gray-600 mt-2">
-            계정을 삭제하면 모든 데이터가 영구적으로 제거됩니다. 이 작업은
-            되돌릴 수 없습니다.
-          </p>
-          <button
-            onClick={handleWithdraw}
-            className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300"
-          >
-            계정 삭제하기
-          </button>
+          <h1 className="text-3xl font-bold text-gray-900">마이페이지</h1>
         </div>
 
-        {/* 로그아웃 버튼 */}
-        {/* <div>
-          <button
-            onClick={handleLogout}
-            className="w-full mt-8 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg"
-          >
-            로그아웃
-          </button>
-        </div> */}
-      </div>
+        {/* 자산 요약 섹션 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <AssetSummary
+            data={displayAssetSummary}
+            stockProfit={stockCalcs.totalStockProfit} // 주식 손익 전달
+            stockProfitRate={stockCalcs.totalStockProfitRate} // 주식 수익률 전달
+          />
+        </div>
+
+        {/* 자산 변화 추이 차트 */}
+        <AssetHistoryChart data={finalAssetHistoryData} />
+
+        {/* 보유 주식 테이블 (onCalculationsComplete 제거됨) */}
+        <HoldingsTable data={stockHoldings} />
+
+        {/* ✨ 미체결 주문 섹션 추가 --- */}
+        <PendingOrdersTable
+          orders={pendingOrders}
+          onCancelOrder={cancelOrder}
+          isLoading={isLoading} // 취소 중 로딩 상태 전달
+        />
+
+        {/* 거래 내역 테이블 */}
+        <TransactionHistory data={transactionHistory} />
+
+        {/* 개인정보 설정 폼 */}
+        <SettingsForm data={userInfo} onWithdraw={handleWithdraw} />
+      </main>
     </div>
   )
 }

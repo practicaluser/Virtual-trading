@@ -1,7 +1,7 @@
 # backend/users/urls.py
 
 from django.urls import path
-from .views import SignupView, MyPageView, LogoutView, PasswordChangeView, WithdrawView 
+from .views import SignupView, MyPageView, LogoutView, PasswordChangeView, WithdrawView , AssetHistoryListView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -15,4 +15,5 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'), 
     path('password/change/', PasswordChangeView.as_view(), name='password_change'),
     path('withdraw/', WithdrawView.as_view(), name='withdraw'),
+    path('asset-history/', AssetHistoryListView.as_view(), name='asset-history'),
 ]

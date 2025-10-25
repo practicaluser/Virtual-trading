@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -45,6 +46,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'users',
     'stocks',
+    'trading',
+
+    # Celery 관련 앱 추가
+    'django_celery_beat',      # 스케줄러 (DB 사용)
+    'django_celery_results',   # 작업 결과 (DB 사용)
 ]
 
 MIDDLEWARE = [
@@ -172,6 +178,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 # (선택사항) SIMPLE_JWT 상세 설정
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30), # Access Token 유효 기간: 30분
+    # "ACCESS_TOKEN_LIFETIME": timedelta(seconds=10),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),    # Refresh Token 유효 기간: 7일
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
@@ -235,3 +242,51 @@ LOGGING = {
         },
     },
 }
+
+
+
+# ==============================================================================
+# CELERY SETTINGS
+# ==============================================================================
+# 메시지 브로커 URL (Docker Compose의 Redis 서비스 이름 사용)
+CELERY_BROKER_URL = 'redis://redis:6379/0' # Docker 내부에서는 'redis' 호스트명 사용
+# 작업 결과 백엔드 URL
+CELERY_RESULT_BACKEND = 'django-db' # django-celery-results 사용 (DB에 결과 저장)
+# 작업 결과가 JSON으로 직렬화되도록 설정 (기본값)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+# 시간대 설정 (Django 설정과 동일하게)
+CELERY_TIMEZONE = TIME_ZONE # TIME_ZONE = 'Asia/Seoul'
+CELERY_ENABLE_UTC = False # False로 해야 TIME_ZONE 설정이 적용됨
+
+# --- Celery Beat 설정 ---
+# 스케줄러 설정 (DB 사용)
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# [핵심] 스케줄 정의 (예시: 매일 자정 5분에 실행)
+# 실제 운영 시에는 'crontab'을 사용하여 "매월 마지막 거래일"을 더 정확히 지정해야 함
+CELERY_BEAT_SCHEDULE = {
+    'record-asset-snapshot-daily': { # 스케줄 이름 (고유해야 함)
+        'task': 'users.tasks.task_record_asset_snapshot', # 실행할 Task 경로
+        'schedule': crontab(minute='0', hour='18'), # 매일 00:05분에 실행
+        # 'schedule': crontab(minute='0', hour='18', day_of_month='last'), # 매월 마지막날 18시 (거래일 체크 필요)
+        # 'args': (arg1, arg2), # Task에 인자를 넘길 경우
+    },
+    # 다른 주기적인 Task가 있다면 여기에 추가
+    'process-pending-orders-every-minute': {
+        'task': 'trading.tasks.process_pending_limit_orders', # 새 작업 경로
+        'schedule': crontab(minute='*'), # 매 분마다 실행
+        # 대안: 30초마다 실행
+        # 'schedule': timedelta(seconds=30),
+        # 주의: 너무 자주 실행하면 API 호출 제한에 걸리거나 서버 부하가 증가할 수 있습니다.
+        #       테스트 및 실제 장 운영 시간 등을 고려하여 빈도를 조절하세요.
+    },
+}
+
+# 작업 결과를 DB에 저장하기 위한 설정 (django-celery-results)
+CELERY_RESULT_EXTENDED = True # 작업 결과에 더 많은 정보 포함
+CELERY_RESULT_BACKEND_ALWAYS_RETRY = True
+CELERY_RESULT_BACKEND_MAX_RETRIES = 10
+CELERY_TASK_SEND_SENT_EVENT = True # 작업 상태 추적 이벤트 활성화
+CELERY_TASK_TRACK_STARTED = True # 작업 시작 상태 추적
