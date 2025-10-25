@@ -3,8 +3,11 @@ from decimal import Decimal
 from io import StringIO  # For capturing command output
 from unittest.mock import call, patch  # call 추가
 
+# users/tests.py 상단 import 영역에 추가
+import pandas as pd  # pykrx 모의 객체(DataFrame) 생성을 위해
 from django.contrib.auth import get_user_model
 from django.core.management import call_command  # For testing command
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -13,16 +16,11 @@ from rest_framework.test import APITestCase
 import users.management.commands.record_asset_snapshot as snapshot_module
 from stocks.models import Stock  # Need Stock model
 from trading.models import Portfolio  # Need Portfolio model
-
-from .models import AssetHistory, User
-
-# users/tests.py 상단 import 영역에 추가
-import pandas as pd  # pykrx 모의 객체(DataFrame) 생성을 위해
 from users.management.commands.record_asset_snapshot import (
     Command,  # 테스트할 커맨드 클래스 직접 임포트
 )
 
-from django.test import TestCase    
+from .models import AssetHistory, User
 
 
 class UserAuthAPITests(APITestCase):
@@ -308,7 +306,6 @@ class AssetHistoryTests(APITestCase):
             "마지막 거래일이 아니므로", out.getvalue()
         )  # Check output message
 
-
     # [추가] 'handle' 메서드의 가격 조회 실패 테스트
     @patch.object(
         snapshot_module, "get_current_stock_price_for_trading"
@@ -316,9 +313,7 @@ class AssetHistoryTests(APITestCase):
     @patch.object(
         snapshot_module.Command, "is_last_trading_day_of_month"
     )  # Command 클래스의 메서드 패치
-    @patch.object(
-        timezone, "now"
-    )  # timezone.now 패치
+    @patch.object(timezone, "now")  # timezone.now 패치
     def test_record_asset_snapshot_handle_price_error(
         self, mock_now, mock_is_last_day, mock_get_price
     ):
@@ -385,9 +380,8 @@ class AssetHistoryTests(APITestCase):
         self.assertNotIn("오류 발생", out.getvalue())
 
 
-
-
 # --- 2. 'is_last_trading_day_of_month' 메서드 자체를 테스트하는 새 클래스 추가 ---
+
 
 class RecordAssetSnapshotMethodTest(TestCase):
     """

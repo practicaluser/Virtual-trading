@@ -1,14 +1,13 @@
+from decimal import Decimal
 from unittest.mock import patch
 
-from django.core.management import call_command
-from django.test import TestCase
-
-from .models import Stock
-
-from decimal import Decimal
 import requests
 from bs4 import BeautifulSoup
+from django.core.management import call_command
+from django.test import TestCase
 from rest_framework.test import APITestCase
+
+from .models import Stock
 
 # [추가] views.py에서 테스트할 함수 및 헬퍼 함수 임포트
 from .views import (
@@ -17,7 +16,6 @@ from .views import (
     parse_sign,
     parse_span_numbers,
 )
-
 
 # --- 테스트를 위한 가짜 HTML 데이터 ---
 # 이 HTML은 실제 네이버의 구조를 단순화한 버전입니다.
@@ -124,7 +122,6 @@ class CrawlStocksCommandTest(TestCase):
         self.assertEqual(kakao.stock_name, "카카오")
 
         print("\n[SUCCESS] crawl_stocks 명령어 동기화 테스트 통과!")
-
 
 
 # --- 테스트를 위한 가짜 HTML 데이터 ---
@@ -237,7 +234,7 @@ class HelperFunctionTests(TestCase):
         가짜 HTML을 반환하도록 patch하고, Decimal 타입으로 가격을 잘 반환하는지 확인
         """
         stock_code = "005930"
-        
+
         # 'stocks.views.requests.get'을 mock 객체로 대체
         with patch("stocks.views.requests.get") as mock_get:
             # mock_get이 MockResponse 객체를 반환하도록 설정
@@ -261,7 +258,10 @@ class HelperFunctionTests(TestCase):
         네트워크 요청 실패 시 (e.g., 404, 500) ConnectionError를 발생시키는지 확인
         """
         # requests.get이 RequestException을 발생시키도록 설정
-        with patch("stocks.views.requests.get", side_effect=requests.exceptions.RequestException("Test Error")):
+        with patch(
+            "stocks.views.requests.get",
+            side_effect=requests.exceptions.RequestException("Test Error"),
+        ):
             # self.assertRaises(예외, 함수, *args)
             with self.assertRaises(ConnectionError):
                 get_current_stock_price_for_trading("005930")
@@ -274,7 +274,7 @@ class HelperFunctionTests(TestCase):
         # 비어있는 HTML 반환
         with patch("stocks.views.requests.get") as mock_get:
             mock_get.return_value = MockResponse("<html></html>", 200)
-            
+
             with self.assertRaises(ValueError):
                 get_current_stock_price_for_trading("005930")
 
@@ -286,13 +286,16 @@ class HelperFunctionTests(TestCase):
         html = '<span>91.09 +2.49%<span class="blind">상승</span></span>'
         soup = BeautifulSoup(html, "html.parser")
         element = soup.find("span")
-        
+
         result = parse_change_data(element)
-        self.assertEqual(result, {
-            "change": "91.09",
-            "change_percent": "+2.49%",
-            "status": "상승",
-        })
+        self.assertEqual(
+            result,
+            {
+                "change": "91.09",
+                "change_percent": "+2.49%",
+                "status": "상승",
+            },
+        )
 
     def test_parse_span_numbers(self):
         """
@@ -301,7 +304,7 @@ class HelperFunctionTests(TestCase):
         html = '<span class="no1"></span><span class="no2"></span><span class="shim">,</span><span class="no3"></span><span class="jum">.</span><span class="no4"></span>'
         soup = BeautifulSoup(html, "html.parser")
         elements = soup.select("span")
-        
+
         result = parse_span_numbers(elements)
         self.assertEqual(result, "12,3.4")
 
@@ -329,11 +332,12 @@ class HelperFunctionTests(TestCase):
 # 2. APIView 테스트 (APITestCase 사용)
 # ================================================================
 
+
 class MarketIndexViewTest(APITestCase):
     """
     MarketIndexView (코스피/코스닥 지수) API를 테스트합니다.
     """
-    
+
     # 'stocks.views' 모듈의 requests.get을 mock_get으로 대체
     @patch("stocks.views.requests.get")
     def test_market_index_success(self, mock_get):
@@ -355,13 +359,13 @@ class MarketIndexViewTest(APITestCase):
         data = response.data
         self.assertIn("kospi", data)
         self.assertIn("kosdaq", data)
-        
+
         # 3. KOSPI 데이터 파싱 확인
         self.assertEqual(data["kospi"]["index"], "2,500.00")
         self.assertEqual(data["kospi"]["change"], "91.09")
         self.assertEqual(data["kospi"]["status"], "상승")
         self.assertEqual(data["kospi"]["chart_url"], "/fake_kospi_chart.png")
-        
+
         # 4. KOSDAQ 데이터 파싱 확인
         self.assertEqual(data["kosdaq"]["index"], "800.00")
         self.assertEqual(data["kosdaq"]["change"], "2.49")
@@ -373,10 +377,12 @@ class MarketIndexViewTest(APITestCase):
         [MarketIndexView] 실패 케이스:
         네트워크 요청 실패 시 503 (SERVICE_UNAVAILABLE) 상태 코드를 반환하는지 확인
         """
-        mock_get.side_effect = requests.exceptions.RequestException("Test Network Error")
+        mock_get.side_effect = requests.exceptions.RequestException(
+            "Test Network Error"
+        )
 
         response = self.client.get("/api/stocks/market-index/")
-        
+
         self.assertEqual(response.status_code, 503)
         self.assertIn("error", response.data)
         self.assertIn("네이버 금융 서버 요청 실패", response.data["error"])
@@ -389,9 +395,9 @@ class MarketIndexViewTest(APITestCase):
         """
         # KOSPI_now가 없는 비어있는 HTML 반환
         mock_get.return_value = MockResponse("<html></html>", 200)
-        
+
         response = self.client.get("/api/stocks/market-index/")
-        
+
         self.assertEqual(response.status_code, 500)
         self.assertIn("error", response.data)
         self.assertIn("데이터 파싱 중 오류 발생", response.data["error"])
@@ -401,10 +407,12 @@ class StockSearchViewTest(APITestCase):
     """
     StockSearchView (주식 검색) API를 테스트합니다.
     """
-    
+
     def setUp(self):
         # 테스트를 위해 DB에 '삼성전자' 주식을 미리 생성
-        Stock.objects.create(stock_code="005930", stock_name="삼성전자", market_type="KOSPI")
+        Stock.objects.create(
+            stock_code="005930", stock_name="삼성전자", market_type="KOSPI"
+        )
         # 'SK하이닉스'는 DB에 없다고 가정
 
     def test_search_no_query(self):
@@ -424,11 +432,11 @@ class StockSearchViewTest(APITestCase):
         DB와 비교 필터링하여 '삼성전자' 1개만 반환하는지 확인
         """
         mock_get.return_value = MockResponse(FAKE_NAVER_SEARCH_HTML, 200)
-        
+
         response = self.client.get("/api/stocks/search/?query=삼성")
-        
+
         self.assertEqual(response.status_code, 200)
-        
+
         # 네이버 검색 결과는 2개였지만, DB에 있는 '삼성전자' 1개만 반환되어야 함
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "삼성전자")
@@ -441,16 +449,16 @@ class StockSearchViewTest(APITestCase):
         '005930' 코드로 검색 시, DB에서 '삼성전자' 이름을 찾아 네이버에 검색하는지 확인
         """
         mock_get.return_value = MockResponse(FAKE_NAVER_SEARCH_HTML, 200)
-        
+
         response = self.client.get("/api/stocks/search/?query=005930")
-        
+
         self.assertEqual(response.status_code, 200)
-        
+
         # '005930' 코드로 DB를 조회하여 '삼성전자'로 변환한 뒤,
         # 'euc-kr'로 인코딩하여 네이버에 요청했는지 확인
         encoded_query = "https://finance.naver.com/search/search.naver?query=%BB%EF%BC%BA%C0%FC%C0%DA"
-        called_url = mock_get.call_args[0][0] # mock_get이 호출된 첫 번째 인자(URL)
-        
+        called_url = mock_get.call_args[0][0]  # mock_get이 호출된 첫 번째 인자(URL)
+
         # 실제 호출된 URL과 예상 URL이 동일한지 확인
         self.assertEqual(called_url, encoded_query)
         self.assertEqual(response.data[0]["name"], "삼성전자")
@@ -475,20 +483,20 @@ class StockDetailViewTest(APITestCase):
             MockResponse(FAKE_NAVER_DETAIL_5STEP_HTML, 200),
             MockResponse(FAKE_NAVER_DETAIL_10STEP_HTML, 200),
         ]
-        
+
         response = self.client.get("/api/stocks/detail/005930/")
-        
+
         self.assertEqual(response.status_code, 200)
-        
+
         data = response.data
-        
+
         # 1. 헤더 정보 파싱 확인
         self.assertEqual(data["name"], "삼성전자")
         self.assertEqual(data["price"], "80,000")
         self.assertEqual(data["change"], "1000")
         self.assertEqual(data["change_rate"], "-1.23%")
         self.assertEqual(data["status"], "")
-        
+
         # 2. 5단계 호가 파싱 확인
         self.assertEqual(len(data["order_book_5"]["asks"]), 2)
         self.assertEqual(len(data["order_book_5"]["bids"]), 2)
@@ -501,7 +509,9 @@ class StockDetailViewTest(APITestCase):
         self.assertEqual(len(data["order_book_10"]["bids"]), 2)
         self.assertEqual(data["order_book_10"]["total_ask_volume"], "15")
         self.assertEqual(data["order_book_10"]["total_bid_volume"], "30")
-        self.assertEqual(data["order_book_10"]["bids"][0]["price"], "79,500") # 순서대로 정렬됨
+        self.assertEqual(
+            data["order_book_10"]["bids"][0]["price"], "79,500"
+        )  # 순서대로 정렬됨
 
 
 # (참고) StockTimeTicksView, StockDailyPriceView 테스트
