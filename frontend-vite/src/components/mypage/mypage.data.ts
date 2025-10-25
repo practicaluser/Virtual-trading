@@ -1,4 +1,4 @@
-import { type AssetSummaryData, type AssetHistoryData } from './mypage.types'
+import { type AssetSummaryData } from './mypage.types'
 
 // 1. 자산 요약 데이터
 export const mockAssetSummary: AssetSummaryData = {
@@ -11,20 +11,20 @@ export const mockAssetSummary: AssetSummaryData = {
 }
 
 // 2. 자산 변화 추이 (차트용)
-export const mockAssetHistory: AssetHistoryData[] = [
-  { month: '1월', value: 8000000 },
-  { month: '2월', value: 8500000 },
-  { month: '3월', value: 8200000 },
-  { month: '4월', value: 9000000 },
-  { month: '5월', value: 8800000 },
-  { month: '6월', value: 9500000 },
-  { month: '7월', value: 9200000 },
-  { month: '8월', value: 10000000 },
-  { month: '9월', value: 10500000 },
-  { month: '10월', value: 10200000 },
-  { month: '11월', value: 11000000 },
-  { month: '12월', value: 11000000 },
-]
+// export const mockAssetHistory: AssetHistoryData[] = [
+//   { month: '1월', value: 8000000 },
+//   { month: '2월', value: 8500000 },
+//   { month: '3월', value: 8200000 },
+//   { month: '4월', value: 9000000 },
+//   { month: '5월', value: 8800000 },
+//   { month: '6월', value: 9500000 },
+//   { month: '7월', value: 9200000 },
+//   { month: '8월', value: 10000000 },
+//   { month: '9월', value: 10500000 },
+//   { month: '10월', value: 10200000 },
+//   { month: '11월', value: 11000000 },
+//   { month: '12월', value: 11000000 },
+// ]
 
 // 3. 보유 주식 데이터
 // export const mockStockHoldings: StockHolding[] = [
