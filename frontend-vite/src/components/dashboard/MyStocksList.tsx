@@ -1,5 +1,5 @@
 import React from 'react'
-import { formatCurrency } from '../mypage/format' // 포맷 유틸 임포트
+// import { formatCurrency } from '../mypage/format' // 포맷 유틸 임포트
 // EnrichedPortfolioItem 타입 또는 유사한 타입 정의 필요
 // 여기서는 간단히 필요한 필드만 포함하는 타입을 정의합니다.
 interface StockListItem {

@@ -295,7 +295,7 @@ import SearchResultsTable, {
 
 // --- Data Hook & Utils ---
 import { usePortfolioData } from '../hooks/usePortfolioData'
-import { formatCurrency } from '../components/mypage/format'
+// import { formatCurrency } from '../components/mypage/format'
 
 // --- Type Definitions ---
 interface IndexData {
@@ -318,22 +318,22 @@ interface StockListItem {
 }
 
 // --- Mock Data ---
-const mockMarketIndexes = [
-  {
-    title: '코스피 KOSPI',
-    value: '3,845.56',
-    change: '38.12',
-    changeRate: '+0.98%',
-    isPositive: true,
-  },
-  {
-    title: '코스닥 KOSDAQ',
-    value: '872.03',
-    change: '7.12',
-    changeRate: '+0.83%',
-    isPositive: true,
-  },
-]
+// const mockMarketIndexes = [
+//   {
+//     title: '코스피 KOSPI',
+//     value: '3,845.56',
+//     change: '38.12',
+//     changeRate: '+0.98%',
+//     isPositive: true,
+//   },
+//   {
+//     title: '코스닥 KOSDAQ',
+//     value: '872.03',
+//     change: '7.12',
+//     changeRate: '+0.83%',
+//     isPositive: true,
+//   },
+// ]
 
 // --- Helper Functions ---
 const isMarketOpen = (): boolean => {
