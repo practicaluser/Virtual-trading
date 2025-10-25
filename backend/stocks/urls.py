@@ -1,12 +1,13 @@
 # backend/stocks/urls.py
 
 from django.urls import path
+
 from .views import (
     MarketIndexView,
-    StockSearchView,
-    StockDetailView,
-    StockTimeTicksView,
     StockDailyPriceView,
+    StockDetailView,
+    StockSearchView,
+    StockTimeTicksView,
 )
 
 urlpatterns = [

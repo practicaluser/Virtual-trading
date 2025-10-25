@@ -1,13 +1,13 @@
 # backend/trading/views.py
 
+from rest_framework import status  # [추가]
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response  # [추가]
-from rest_framework import status  # [추가]
 from rest_framework.views import APIView
 
 from .models import Order, Portfolio
-from .serializers import OrderSerializer, OrderCreateSerializer, PortfolioSerializer
+from .serializers import OrderCreateSerializer, OrderSerializer, PortfolioSerializer
 
 
 class OrderListCreateView(generics.ListCreateAPIView):

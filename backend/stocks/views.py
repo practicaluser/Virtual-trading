@@ -1,19 +1,21 @@
 # backend/stocks/views.py
 
-import requests
-from bs4 import BeautifulSoup
-
-# Django Rest Framework의 APIView와 Response를 사용합니다.
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-import urllib.parse
-from .models import Stock
 import logging
 import re
 import time
+import urllib.parse
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
+
+import requests
+from bs4 import BeautifulSoup
+from rest_framework import status
+from rest_framework.response import Response
+
+# Django Rest Framework의 APIView와 Response를 사용합니다.
+from rest_framework.views import APIView
+
+from .models import Stock
 
 logger = logging.getLogger(__name__)
 

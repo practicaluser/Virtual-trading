@@ -1,22 +1,24 @@
 # backend/trading/tests.py
 
-from rest_framework.test import APITestCase
-from rest_framework import status
-from django.contrib.auth import get_user_model
-from django.urls import reverse
-from unittest.mock import patch, MagicMock  # MagicMock 추가 (필요시 사용)
-from decimal import Decimal
-from django.utils import timezone  # For timestamp comparison
 from datetime import timedelta
+from decimal import Decimal
+from unittest.mock import MagicMock, patch  # MagicMock 추가 (필요시 사용)
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone  # For timestamp comparison
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 from stocks.models import Stock
-from .models import Portfolio, Order, Transaction
+
+from .models import Order, Portfolio, Transaction
+from .tasks import process_pending_limit_orders
 
 # users 앱의 AssetHistory 모델도 임포트 (setUp에서 사용 가능성 고려)
 # from users.models import AssetHistory
 
-from .tasks import process_pending_limit_orders
-from django.test import TestCase
 
 User = get_user_model()
 

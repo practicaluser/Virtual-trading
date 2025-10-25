@@ -1,15 +1,17 @@
 # backend/trading/serializers.py
 
-from rest_framework import serializers
-from django.db import transaction
-from decimal import Decimal
 from datetime import datetime  # [추가] datetime 임포트 (타입 힌팅용)
+from decimal import Decimal
 
-# [수정] Transaction 모델도 임포트
-from .models import Order, Transaction, Portfolio
+from django.db import transaction
+from rest_framework import serializers
+
 from stocks.models import Stock
 from stocks.views import get_current_stock_price_for_trading
 from users.models import User
+
+# [수정] Transaction 모델도 임포트
+from .models import Order, Portfolio, Transaction
 
 # --- 출력용 Serializers ---
 

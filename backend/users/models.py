@@ -1,11 +1,11 @@
 # backend/users/models.py
 
-from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-
 # PermissionsMixin, Group, Permission 임포트 제거
 from decimal import Decimal
+
 from django.conf import settings
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
 
 
 class UserManager(BaseUserManager):

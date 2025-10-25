@@ -9,10 +9,10 @@
 # from trading.models import Portfolio
 # from stocks.views import get_current_stock_price_for_trading
 
-from celery import shared_task
-from django.core.management import call_command
 import logging
 
+from celery import shared_task
+from django.core.management import call_command
 
 # 로거 설정
 logger = logging.getLogger(__name__)

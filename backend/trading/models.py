@@ -1,8 +1,9 @@
 # backend/trading/models.py
 
-from django.db import models
-from django.conf import settings
 from decimal import Decimal
+
+from django.conf import settings
+from django.db import models
 
 # users.User 모델을 직접 참조하는 대신 settings.AUTH_USER_MODEL 사용 권장
 # stocks.Stock 모델은 'stocks.Stock' 문자열로 참조 (순환 참조 방지)

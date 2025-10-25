@@ -1,8 +1,9 @@
 # backend/users/serializers.py
 
-from rest_framework import serializers
-from .models import User, AssetHistory
 from django.contrib.auth import update_session_auth_hash
+from rest_framework import serializers
+
+from .models import AssetHistory, User
 
 
 class UserCreationSerializer(serializers.ModelSerializer):

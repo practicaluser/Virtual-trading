@@ -1,15 +1,16 @@
 # backend/trading/tasks.py
 
+import logging
+from decimal import Decimal
+
 from celery import shared_task
 from django.db import transaction as db_transaction
-from decimal import Decimal
-import logging
-
-from .models import Order, Transaction, Portfolio
-from users.models import User
 
 # 현재가 조회 함수 경로 확인 필요
 from stocks.views import get_current_stock_price_for_trading
+from users.models import User
+
+from .models import Order, Portfolio, Transaction
 
 logger = logging.getLogger(__name__)
 

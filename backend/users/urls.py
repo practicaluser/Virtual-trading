@@ -1,17 +1,15 @@
 # backend/users/urls.py
 
 from django.urls import path
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
 from .views import (
-    SignupView,
-    MyPageView,
-    LogoutView,
-    PasswordChangeView,
-    WithdrawView,
     AssetHistoryListView,
-)
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
+    LogoutView,
+    MyPageView,
+    PasswordChangeView,
+    SignupView,
+    WithdrawView,
 )
 
 urlpatterns = [

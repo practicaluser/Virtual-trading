@@ -1,6 +1,7 @@
 # backend/config/celery.py
 
 import os
+
 from celery import Celery
 
 # Django settings 모듈을 Celery의 기본 설정으로 지정

@@ -1,7 +1,9 @@
-import requests
 import time
+
+import requests
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
+
 from stocks.models import Stock
 
 

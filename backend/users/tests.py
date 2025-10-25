@@ -1,22 +1,20 @@
-from django.urls import reverse
-from rest_framework.test import APITestCase
-from rest_framework import status
-from .models import User, AssetHistory
-
-from django.core.management import call_command
-from django.contrib.auth import get_user_model
-from unittest.mock import patch, call  # call 추가
-from decimal import Decimal
-from django.utils import timezone
 from datetime import date, timedelta
+from decimal import Decimal
 from io import StringIO  # For capturing command output
-from django.core.management import call_command  # For testing command
-from unittest.mock import patch, call
+from unittest.mock import call, patch  # call 추가
 
+from django.contrib.auth import get_user_model
+from django.core.management import call_command  # For testing command
+from django.urls import reverse
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+import users.management.commands.record_asset_snapshot as snapshot_module
 from stocks.models import Stock  # Need Stock model
 from trading.models import Portfolio  # Need Portfolio model
 
-import users.management.commands.record_asset_snapshot as snapshot_module
+from .models import AssetHistory, User
 
 
 class UserAuthAPITests(APITestCase):
