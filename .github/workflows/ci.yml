@@ -127,7 +127,8 @@ jobs:
       - name: Lint with ESLint
         working-directory: ./frontend-vite
         # [개선] || true를 제거하여 린트 오류 시 CI 실패
-        run: npx eslint . --rule '@typescript-eslint/no-explicit-any: off' --rule 'react-refresh/only-export-components: off' --rule '@typescript-eslint/no-unused-vars: off'
+        run: | # <--- 🌟 | 를 추가
+          npx eslint . --rule '@typescript-eslint/no-explicit-any: off' --rule 'react-refresh/only-export-components: off' --rule '@typescript-eslint/no-unused-vars: off'
 
       # [개선] 유닛 테스트(npm test) 및 E2E 테스트는 요청에 따라 생략
 
