@@ -16,6 +16,14 @@ from trading.models import Portfolio  # Need Portfolio model
 
 from .models import AssetHistory, User
 
+# users/tests.py 상단 import 영역에 추가
+import pandas as pd  # pykrx 모의 객체(DataFrame) 생성을 위해
+from users.management.commands.record_asset_snapshot import (
+    Command,  # 테스트할 커맨드 클래스 직접 임포트
+)
+
+from django.test import TestCase    
+
 
 class UserAuthAPITests(APITestCase):
 
@@ -299,3 +307,165 @@ class AssetHistoryTests(APITestCase):
         self.assertIn(
             "마지막 거래일이 아니므로", out.getvalue()
         )  # Check output message
+
+
+    # [추가] 'handle' 메서드의 가격 조회 실패 테스트
+    @patch.object(
+        snapshot_module, "get_current_stock_price_for_trading"
+    )  # 모듈 레벨 함수 패치
+    @patch.object(
+        snapshot_module.Command, "is_last_trading_day_of_month"
+    )  # Command 클래스의 메서드 패치
+    @patch.object(
+        timezone, "now"
+    )  # timezone.now 패치
+    def test_record_asset_snapshot_handle_price_error(
+        self, mock_now, mock_is_last_day, mock_get_price
+    ):
+        """
+        [handle] (예외) 스냅샷 기록 중 일부 주식의 가격 조회에 실패하는 경우
+        """
+        print("\n[TEST] test_record_asset_snapshot_handle_price_error")
+        # --- Mocking Setup ---
+        test_date = date(2025, 10, 31)
+        mock_now.return_value = timezone.make_aware(
+            timezone.datetime.combine(test_date, timezone.datetime.min.time())
+        )
+        mock_is_last_day.return_value = True  # 마지막 거래일이라고 가정
+
+        # 가격 조회 시, '000660'(SK하이닉스)만 에러 발생시킴
+        def mock_price_logic(stock_code):
+            if stock_code == "005930":
+                return Decimal("80000.00")
+            if stock_code == "000660":
+                raise ConnectionError("Test Naver Connection Error")
+            return None
+
+        mock_get_price.side_effect = mock_price_logic
+
+        # --- Test Data Setup ---
+        # self.user (Cash 10M) - 삼성전자 10주 보유 (성공)
+        Portfolio.objects.create(
+            user=self.user,
+            stock=self.stock_samsung,
+            total_quantity=10,
+            average_purchase_price=Decimal("70000"),
+        )
+        # self.other_user (Cash 5M) - SK하이닉스 5주 보유 (실패)
+        Portfolio.objects.create(
+            user=self.other_user,
+            stock=self.stock_sk,
+            total_quantity=5,
+            average_purchase_price=Decimal("100000"),
+        )
+
+        # --- Execute Command ---
+        out = StringIO()
+        # stdout=out, stderr=out: 표준 출력과 표준 에러를 모두 캡처
+        call_command("record_asset_snapshot", stdout=out, stderr=out)
+
+        # --- Assertions ---
+        # 1. user1 (삼성전자) : 정상적으로 자산 계산
+        # 자산 = 현금(10M) + 주식(10 * 80,000 = 800,000) = 10,800,000
+        history_user1 = AssetHistory.objects.get(
+            user=self.user, snapshot_date=test_date
+        )
+        self.assertEqual(history_user1.total_asset, Decimal("10800000.00"))
+
+        # 2. user2 (SK하이닉스) : 주식 가치 0으로 계산 (에러 발생)
+        # 자산 = 현금(5M) + 주식(0) = 5,000,000
+        history_user2 = AssetHistory.objects.get(
+            user=self.other_user, snapshot_date=test_date
+        )
+        self.assertEqual(history_user2.total_asset, Decimal("5000000.00"))
+
+        # 3. 커맨드 최종 출력에 '오류 발생'이 포함되었는지 확인
+        self.assertIn("자산 스냅샷 기록 완료", out.getvalue())
+
+        self.assertNotIn("오류 발생", out.getvalue())
+
+
+
+
+# --- 2. 'is_last_trading_day_of_month' 메서드 자체를 테스트하는 새 클래스 추가 ---
+
+class RecordAssetSnapshotMethodTest(TestCase):
+    """
+    record_asset_snapshot 커맨드의
+    'is_last_trading_day_of_month' 메서드 로직을 직접 테스트합니다.
+    (pykrx 라이브러리를 모킹)
+    """
+
+    def setUp(self):
+        self.command = Command()
+
+    @patch("pykrx.stock.get_market_ohlcv_by_date")
+    def test_is_last_trading_day_of_month_true(self, mock_pykrx):
+        """[Method] (성공) 오늘이 마지막 거래일인 경우 True 반환"""
+        print("\n[TEST] test_is_last_trading_day_of_month_true")
+        # 1. Setup: 10월 31일이 마지막 거래일인 상황 가정
+        test_date = date(2025, 10, 31)  # 금요일
+
+        # pykrx가 반환할 가짜 DataFrame (pandas 객체)
+        mock_df = pd.DataFrame(
+            {"종가": [100, 200]},
+            index=pd.to_datetime(["2025-10-30", "2025-10-31"]),
+        )
+        mock_pykrx.return_value = mock_df
+
+        # 2. Action
+        result = self.command.is_last_trading_day_of_month(test_date)
+
+        # 3. Assert
+        self.assertTrue(result)
+        # pykrx가 올바른 월 범위(10월 1일 ~ 10월 31일)로 호출되었는지 확인
+        mock_pykrx.assert_called_once_with(
+            fromdate="20251001", todate="20251031", ticker="005930"
+        )
+
+    @patch("pykrx.stock.get_market_ohlcv_by_date")
+    def test_is_last_trading_day_of_month_false(self, mock_pykrx):
+        """[Method] (실패) 오늘이 마지막 거래일이 아닌 경우 False 반환"""
+        print("\n[TEST] test_is_last_trading_day_of_month_false")
+        # 1. Setup: 10월 30일에 실행했으나, 31일이 마지막 거래일인 상황
+        test_date = date(2025, 10, 30)  # 목요일
+
+        mock_df = pd.DataFrame(
+            {"종가": [100, 200]},
+            index=pd.to_datetime(["2025-10-30", "2025-10-31"]),
+        )
+        mock_pykrx.return_value = mock_df
+
+        # 2. Action
+        result = self.command.is_last_trading_day_of_month(test_date)
+
+        # 3. Assert
+        self.assertFalse(result)
+
+    @patch("pykrx.stock.get_market_ohlcv_by_date")
+    def test_is_last_trading_day_of_month_pykrx_error(self, mock_pykrx):
+        """[Method] (예외) pykrx가 에러를 발생시키는 경우 False 반환"""
+        print("\n[TEST] test_is_last_trading_day_of_month_pykrx_error")
+        # 1. Setup
+        test_date = date(2025, 10, 31)
+        mock_pykrx.side_effect = Exception("PYKRX Network Error")
+
+        # 2. Action
+        result = self.command.is_last_trading_day_of_month(test_date)
+
+        # 3. Assert
+        self.assertFalse(result)  # 에러 발생 시 안전하게 False 반환
+
+    @patch("pykrx.stock.get_market_ohlcv_by_date")
+    def test_is_last_trading_day_of_month_empty_df(self, mock_pykrx):
+        """[Method] (예외) 해당 월에 거래일이 없어 빈 DataFrame 반환 시 False"""
+        print("\n[TEST] test_is_last_trading_day_of_month_empty_df")
+        # 1. Setup
+        test_date = date(2025, 10, 31)
+        mock_pykrx.return_value = pd.DataFrame()  # 비어있는 DataFrame
+
+        # 2. Action
+        result = self.command.is_last_trading_day_of_month(test_date)
+
+        # 3. Assert
+        self.assertFalse(result)  # df.empty == True
