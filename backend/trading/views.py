@@ -1,12 +1,9 @@
 # [수정된 import 블록 시작]
 
 # 1. Standard Library
-from concurrent.futures import (
-    ThreadPoolExecutor,
-    as_completed,
-)
-from decimal import Decimal
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from decimal import Decimal
 
 # 2. Third-Party
 from rest_framework import generics, status
