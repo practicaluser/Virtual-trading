@@ -145,3 +145,50 @@ jobs:
     steps:
       - name: Report success
         run: echo "✅ All CI checks passed successfully."
+
+  # -----------------------------------------------------------------
+  # 🌟 [신규] Job 4: AWS EC2에 배포 (여기에 추가!)
+  # -----------------------------------------------------------------
+  deploy:
+    name: 🚀 Deploy to EC2
+    runs-on: ubuntu-latest
+    # ci-pipeline-success 잡이 성공해야만 실행됨
+    needs: [ci-pipeline-success]
+
+    # main 브랜치에 'push'될 때만 실행 (Pull Request 제외)
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ${{ secrets.AWS_EC2_USERNAME }}
+          key: ${{ secrets.AWS_EC2_SSH_KEY }}
+          script: |
+            # 1. 프로젝트 디렉터리로 이동
+            # (user_data.sh에서 설정한 /home/ubuntu/AscendCapital 경로)
+            cd /home/ubuntu/AscendCapital
+
+            # 2. 최신 코드 받기
+            git pull
+
+            # 3. 백엔드 의존성 업데이트 및 마이그레이션
+            cd backend
+            source venv/bin/activate
+            # ❗️ (중요) CI와 동일하게 상위 폴더의 requirements.txt를 바라봄
+            pip install -r ../requirements.txt 
+            python manage.py migrate
+            python manage.py collectstatic --noinput
+            deactivate
+
+            # 4. 프런트엔드 빌드
+            cd ../frontend-vite
+            npm ci
+            npm run build
+
+            # 5. Gunicorn, Celery 서비스 재시작 (새 코드로 갱신)
+            sudo systemctl restart gunicorn
+            # sudo systemctl restart celery # (Celery 설정 완료 시 주석 해제)
+
+            echo "✅ Deployment successful!"
