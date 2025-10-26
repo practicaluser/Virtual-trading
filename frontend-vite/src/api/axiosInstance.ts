@@ -28,7 +28,8 @@ const processQueue = (error: unknown | null, token: string | null = null) => {
 }
 
 const axiosInstance = axios.create({
-  baseURL: 'http://127.0.0.1:8000',
+  // 👇 [수정] 이 부분을 환경 변수로 변경합니다.
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
