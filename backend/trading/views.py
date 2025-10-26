@@ -1,23 +1,27 @@
-# backend/trading/views.py
+# [수정된 import 블록 시작]
 
-import logging  # [추가] 로깅
+# 1. Standard Library
 from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
-)  # [추가] 병렬 처리를 위해
-from decimal import Decimal  # [추가] Decimal 임포트
+)
+from decimal import Decimal
+import logging
 
+# 2. Third-Party
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-# [수정] 현재가 조회 함수 직접 임포트
+# 3. First-Party (My Project)
 from stocks.views import get_current_stock_price_for_trading
 
-# Order 모델의 StatusType을 직접 사용하기 위해 임포트 (선택사항, 가독성 향상)
+# 4. Local (Current App)
 from .models import Order, Portfolio
 from .serializers import OrderCreateSerializer, OrderSerializer, PortfolioSerializer
+
+# [수정된 import 블록 끝]
 
 logger = logging.getLogger(__name__)
 
