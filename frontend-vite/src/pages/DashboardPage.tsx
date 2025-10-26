@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react' // useRef 추가
-import axios from 'axios' // 시장 지수, 검색용
+// import axios from 'axios' // 시장 지수, 검색용
+import axiosInstance from '../api/axiosInstance'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -117,9 +118,7 @@ const DashboardPage: React.FC = () => {
     const fetchMarketData = async () => {
       if (isMounted) setMarketError(null)
       try {
-        const response = await axios.get(
-          'http://127.0.0.1:8000/api/stocks/market-index/',
-        )
+        const response = await axiosInstance.get('/api/stocks/market-index/')
         if (isMounted) {
           const rawData = response.data
           const formattedData: MarketData = {
@@ -176,8 +175,8 @@ const DashboardPage: React.FC = () => {
       }
       const fetchSearchResults = async () => {
         try {
-          const response = await axios.get(
-            `http://127.0.0.1:8000/api/stocks/search/?query=${lastSearchedTerm}`,
+          const response = await axiosInstance.get(
+            `/api/stocks/search/?query=${lastSearchedTerm}`,
           )
           if (isMounted) {
             const processedData: StockResult[] = response.data.map(
