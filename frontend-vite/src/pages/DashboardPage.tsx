@@ -208,7 +208,7 @@ const DashboardPage: React.FC = () => {
     return () => {
       isMounted = false
     }
-  }, [lastSearchedTerm, isSearching, searchError]) // search 관련 상태 추가
+  }, [lastSearchedTerm]) // search 관련 상태 추가
 
   // --- Event Handlers ---
   const handleSearch = (query: string) => {
