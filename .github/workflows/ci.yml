@@ -146,16 +146,11 @@ jobs:
       - name: Report success
         run: echo "✅ All CI checks passed successfully."
 
-  # -----------------------------------------------------------------
-  # 🌟 [신규] Job 4: AWS EC2에 배포 (여기에 추가!)
-  # -----------------------------------------------------------------
+  # 🌟 [수정] Job 4: AWS EC2에 배포
   deploy:
     name: 🚀 Deploy to EC2
     runs-on: ubuntu-latest
-    # ci-pipeline-success 잡이 성공해야만 실행됨
     needs: [ci-pipeline-success]
-
-    # main 브랜치에 'push'될 때만 실행 (Pull Request 제외)
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -166,29 +161,46 @@ jobs:
           username: ${{ secrets.AWS_EC2_USERNAME }}
           key: ${{ secrets.AWS_EC2_SSH_KEY }}
           script: |
+            # --- [FIX 1] 권한 문제 해결 ---
+            # 'ubuntu' 사용자가 'root'가 소유한 프로젝트 폴더에 접근할 수 있도록 소유권 변경
+            sudo chown -R ubuntu:ubuntu /home/ubuntu/AscendCapital
+
+            # 'ubuntu' 사용자가 Git 명령을 실행할 수 있도록 '안전한 디렉토리'로 등록
+            git config --global --add safe.directory /home/ubuntu/AscendCapital
+
             # 1. 프로젝트 디렉터리로 이동
-            # (user_data.sh에서 설정한 /home/ubuntu/AscendCapital 경로)
             cd /home/ubuntu/AscendCapital
 
-            # 2. 최신 코드 받기
+            # 2. 최신 코드 받기 (이제 권한 문제로 실패하지 않음)
             git pull
 
             # 3. 백엔드 의존성 업데이트 및 마이그레이션
             cd backend
             source venv/bin/activate
-            # ❗️ (중요) CI와 동일하게 상위 폴더의 requirements.txt를 바라봄
             pip install -r ../requirements.txt 
+
+            # --- [FIX 2] 환경 변수 문제 해결 ---
+            # migrate, collectstatic이 .env 파일을 읽도록 셸 환경변수로 강제 로드
+            set -o allexport
+            source /home/ubuntu/AscendCapital/backend/.env
+            set +o allexport
+
+            # 이제 .env의 RDS 주소로 migrate 실행
             python manage.py migrate
+            # .env의 STATIC_ROOT 설정으로 collectstatic 실행
             python manage.py collectstatic --noinput
             deactivate
 
             # 4. 프런트엔드 빌드
             cd ../frontend-vite
+
+            # 이제 'ubuntu' 권한으로 node_modules 생성 가능
             npm ci
+            # 'npm ci'가 tsc를 설치했으므로 build 성공
             npm run build
 
             # 5. Gunicorn, Celery 서비스 재시작 (새 코드로 갱신)
             sudo systemctl restart gunicorn
             # sudo systemctl restart celery # (Celery 설정 완료 시 주석 해제)
 
-            echo "✅ Deployment successful!"
+            echo "✅ Deployment successful! (This time for real)"
