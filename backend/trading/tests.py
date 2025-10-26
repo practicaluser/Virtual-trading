@@ -85,7 +85,9 @@ class TradingAPITests(APITestCase):
         # ▼▼▼▼▼ [수정] patch 경로 탐색 순서 변경 및 추가 ▼▼▼▼▼
         # 1순위: views.py에 'from . import tasks' 또는 'from trading import tasks'
         try:
-            self.price_patcher = patch('trading.tasks.get_current_stock_price_for_trading')
+            self.price_patcher = patch(
+                "trading.tasks.get_current_stock_price_for_trading"
+            )
             self.mock_get_price = self.price_patcher.start()
         except (AttributeError, ImportError) as e:
             # 이 경로가 실패하면 'trading/tasks.py' 파일에 함수가 없는 것입니다.
@@ -98,7 +100,6 @@ class TradingAPITests(APITestCase):
 
         # 테스트 종료 시 patch가 자동으로 중지되도록 등록
         self.addCleanup(self.price_patcher.stop)
-
 
     # --- 1. 시장가(MARKET) 주문 테스트 ---
 
@@ -222,13 +223,13 @@ class TradingAPITests(APITestCase):
         data = {
             "stock": "005930",
             "order_type": "SELL",
-            "quantity": 11, # 10주 보유
+            "quantity": 11,  # 10주 보유
             "price_type": "MARKET",
         }
         response = self.client.post(self.order_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        
+
         # [유지] 시장가 주문 실패는 'List' 형식
         self.assertIsInstance(response.data, list)
         self.assertEqual(response.data[0].code, "invalid")
@@ -237,7 +238,7 @@ class TradingAPITests(APITestCase):
         """[실패] 시장가 매도 - 보유하지 않은 주식"""
         self.mock_get_price.return_value = Decimal("150000.00")
         data = {
-            "stock": "000660", # SK하이닉스 (보유 X)
+            "stock": "000660",  # SK하이닉스 (보유 X)
             "order_type": "SELL",
             "quantity": 1,
             "price_type": "MARKET",
@@ -245,7 +246,7 @@ class TradingAPITests(APITestCase):
         response = self.client.post(self.order_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        
+
         # [유지] 시장가 주문 실패는 'List' 형식
         self.assertIsInstance(response.data, list)
         self.assertEqual(response.data[0].code, "invalid")
@@ -311,7 +312,7 @@ class TradingAPITests(APITestCase):
             "order_type": "BUY",
             "quantity": 100,
             "price_type": "LIMIT",
-            "limit_price": 100001.00, # 10,000,100 필요
+            "limit_price": 100001.00,  # 10,000,100 필요
         }
         response = self.client.post(self.order_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -325,7 +326,7 @@ class TradingAPITests(APITestCase):
         data = {
             "stock": "005930",
             "order_type": "SELL",
-            "quantity": 11, # 10주 보유
+            "quantity": 11,  # 10주 보유
             "price_type": "LIMIT",
             "limit_price": 90000.00,
         }
@@ -416,7 +417,7 @@ class TradingAPITests(APITestCase):
     #     response = self.client.get(self.order_url)
     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
     #     # setUp에서 생성된 주문이 있을 수 있으므로 >= 3
-    #     self.assertGreaterEqual(len(response.data), 3) 
+    #     self.assertGreaterEqual(len(response.data), 3)
 
     #     # 3. ID를 사용하여 각 주문 데이터 찾기 및 검증 (Helper 함수 사용)
     #     completed_order_data = find_order_by_id(response.data, buy_res.data["id"])
@@ -478,7 +479,7 @@ class TradingAPITests(APITestCase):
 
     #     # 삼성전자 데이터 검증
     #     self.assertEqual(samsung_data['total_quantity'], 10)
-    #     self.assertEqual(samsung_data['average_purchase_price'], '70000.00') 
+    #     self.assertEqual(samsung_data['average_purchase_price'], '70000.00')
     #     self.assertEqual(Decimal(samsung_data['current_price']), Decimal('80000.00'))
     #     self.assertEqual(Decimal(samsung_data['total_value']), Decimal('800000.00'))
     #     self.assertEqual(Decimal(samsung_data['profit_loss']), Decimal('100000.00'))
@@ -486,7 +487,7 @@ class TradingAPITests(APITestCase):
 
     #     # NAVER 데이터 검증
     #     self.assertEqual(naver_data['total_quantity'], 2)
-    #     self.assertEqual(naver_data['average_purchase_price'], '250000.00') 
+    #     self.assertEqual(naver_data['average_purchase_price'], '250000.00')
     #     self.assertEqual(Decimal(naver_data['current_price']), Decimal('260000.00'))
     #     self.assertEqual(Decimal(naver_data['total_value']), Decimal('520000.00'))
     #     self.assertEqual(Decimal(naver_data['profit_loss']), Decimal('20000.00'))
@@ -623,7 +624,6 @@ class TradingAPITests(APITestCase):
         completed_order.executed_price = Decimal("75000")
         completed_order.save()
 
-
         order_id = completed_order.id
         cancel_url = reverse(
             self.cancel_order_url_template, kwargs={"order_id": order_id}
@@ -632,11 +632,10 @@ class TradingAPITests(APITestCase):
         response = self.client.post(cancel_url)
 
         # PENDING이 아닌 주문은 get_object_or_404에서 찾지 못해야 함
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND) 
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         completed_order.refresh_from_db()
         self.assertEqual(completed_order.status, Order.StatusType.COMPLETED)
-
 
     def test_cancel_order_fail_not_owner(self):
         """[실패] 다른 사용자의 PENDING 주문 취소 시도"""
@@ -655,7 +654,7 @@ class TradingAPITests(APITestCase):
         )
 
         response = self.client.post(cancel_url)
-        
+
         # 다른 사용자의 주문은 get_object_or_404에서 찾지 못해야 함
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
