@@ -245,12 +245,12 @@ LOGGING = {
 # CELERY SETTINGS
 # ==============================================================================
 # 메시지 브로커 URL (Docker Compose의 Redis 서비스 이름 사용)
-REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
-CELERY_BROKER_URL = f"redis://{REDIS_HOST}:6379/0"
-
+# REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
+# CELERY_BROKER_URL = f"redis://{REDIS_HOST}:6379/0"
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
 
 # [추가] 🔽 Celery 시작 시 이 값이 로그에 찍히도록 함
-print(f"DEBUG: CELERY_BROKER_URL is set to: {CELERY_BROKER_URL}")
+# print(f"DEBUG: CELERY_BROKER_URL is set to: {CELERY_BROKER_URL}")
 
 # 작업 결과 백엔드 URL
 CELERY_RESULT_BACKEND = "django-db"  # django-celery-results 사용 (DB에 결과 저장)
